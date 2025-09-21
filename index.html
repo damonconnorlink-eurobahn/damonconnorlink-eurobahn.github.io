@@ -159,6 +159,56 @@
             padding: 1px 2px;
             border-radius: 2px;
         }
+        
+        /* Definition quiz text overflow handling */
+        .definition-quiz h2 {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            word-break: break-word;
+        }
+        
+        .definition-quiz textarea {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+        
+        .definition-quiz #feedback {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            word-break: break-word;
+        }
+        
+        .definition-quiz p {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            word-break: break-word;
+        }
+        
+        .definition-quiz .answer-option {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            word-break: break-word;
+        }
+        
+        /* Begriff selection list text overflow handling */
+        .term-selection-item {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            word-break: break-word;
+        }
+        
+        .term-selection-item span {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            word-break: break-word;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -175,6 +225,44 @@
                 <p class="text-lg text-gray-500">Begriffsdefinitionen Ril 408.2101A01</p>
             </div>
         </header>
+
+        <!-- Lernfortschritt Dashboard -->
+        <div id="progress-dashboard" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-6 w-full max-w-5xl mx-auto">
+            <h2 class="text-xl font-semibold mb-4 text-[--eb-dark-blue]">Lernfortschritt</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-gray-700" id="total-terms">69</div>
+                    <div class="text-sm text-gray-500">Begriffe gesamt</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-green-600" id="known-count">0</div>
+                    <div class="text-sm text-green-600">Gewusst</div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-red-600" id="unknown-count">0</div>
+                    <div class="text-sm text-red-600">Nicht gewusst</div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-blue-600" id="neutral-count">69</div>
+                    <div class="text-sm text-blue-600">Noch nicht bewertet</div>
+                </div>
+            </div>
+            
+            <!-- Filterbuttons -->
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button id="filter-all" class="px-4 py-2 bg-[--eb-dark-blue] text-white rounded-lg hover:bg-[--eb-medium-blue] transition">Alle anzeigen</button>
+                <button id="filter-unknown" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition">Nur nicht gewusste</button>
+                <button id="filter-known" class="px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition">Nur gewusste</button>
+                <button id="filter-neutral" class="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition">Nur unbewertete</button>
+                <button id="reset-progress" class="px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg transition ml-auto">Fortschritt zurücksetzen</button>
+            </div>
+            
+            <!-- Fortschrittsbalken -->
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                <div id="progress-bar" class="bg-[--eb-teal] h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <p class="text-sm text-gray-600 text-center" id="progress-text">0% bewertet</p>
+        </div>
 
         <div id="settings-view" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8 w-full max-w-5xl mx-auto">
             <div id="settings-content">
@@ -355,6 +443,135 @@
         let score = 0;
         let currentMode = 'learn';
         let filteredDefinitions = [...definitions]; // Für die Suchfunktion
+        
+        // Cache-System für Lernfortschritt
+        class LearningCache {
+            constructor() {
+                this.storageKey = 'eurobahn-learning-progress';
+                this.data = this.loadFromStorage();
+                this.currentSessionId = null;
+            }
+            
+            loadFromStorage() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    return stored ? JSON.parse(stored) : {
+                        cardStatus: {}, // termIndex -> 'known'|'unknown'|'neutral'
+                        quizAnswers: {}, // mode_termIndex -> {userAnswer, isCorrect, timestamp}
+                        sessionStats: { total: 0, known: 0, unknown: 0 }
+                    };
+                } catch (e) {
+                    console.warn('Failed to load learning progress:', e);
+                    return { cardStatus: {}, quizAnswers: {}, sessionStats: { total: 0, known: 0, unknown: 0 } };
+                }
+            }
+            
+            saveToStorage() {
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+                } catch (e) {
+                    console.warn('Failed to save learning progress:', e);
+                }
+            }
+            
+            setCardStatus(termIndex, status) {
+                const oldStatus = this.data.cardStatus[termIndex];
+                this.data.cardStatus[termIndex] = status;
+                
+                // Update session stats
+                if (oldStatus !== status) {
+                    if (oldStatus === 'known') this.data.sessionStats.known--;
+                    if (oldStatus === 'unknown') this.data.sessionStats.unknown--;
+                    
+                    if (status === 'known') this.data.sessionStats.known++;
+                    if (status === 'unknown') this.data.sessionStats.unknown++;
+                    
+                    this.data.sessionStats.total = this.data.sessionStats.known + this.data.sessionStats.unknown;
+                }
+                
+                this.saveToStorage();
+            }
+            
+            getCardStatus(termIndex) {
+                return this.data.cardStatus[termIndex] || 'neutral';
+            }
+            
+            setQuizAnswer(mode, termIndex, userAnswer, isCorrect, isSkipped = false) {
+                const key = `${mode}_${termIndex}`;
+                // Ensure userAnswer is never undefined or the string "undefined"
+                let cleanAnswer = userAnswer;
+                if (cleanAnswer === undefined || cleanAnswer === null || cleanAnswer === 'undefined') {
+                    cleanAnswer = '';
+                }
+                
+                this.data.quizAnswers[key] = {
+                    userAnswer: cleanAnswer,
+                    isCorrect,
+                    timestamp: Date.now(),
+                    isSkipped: isSkipped || (cleanAnswer === '' && !isCorrect),
+                    sessionId: this.currentSessionId // Track which session this answer belongs to
+                };
+                this.saveToStorage();
+            }
+            
+            getQuizAnswer(mode, termIndex) {
+                const key = `${mode}_${termIndex}`;
+                const answer = this.data.quizAnswers[key] || null;
+                
+                // Only return answers from current session
+                if (answer && answer.sessionId !== this.currentSessionId) {
+                    return null;
+                }
+                
+                if (answer && (answer.userAnswer === undefined || answer.userAnswer === 'undefined')) {
+                    answer.userAnswer = '';
+                }
+                return answer;
+            }
+            
+            // Start a new quiz session - clears current session answers
+            startNewSession() {
+                this.currentSessionId = Date.now(); // Use timestamp as session ID
+            }
+            
+            // Clear all quiz answers (for new test sessions)
+            clearSessionAnswers() {
+                // Only clear answers from current session or all if no session tracking
+                Object.keys(this.data.quizAnswers).forEach(key => {
+                    const answer = this.data.quizAnswers[key];
+                    if (!answer.sessionId || answer.sessionId === this.currentSessionId) {
+                        delete this.data.quizAnswers[key];
+                    }
+                });
+                this.saveToStorage();
+            }
+            
+            hasAnswered(mode, termIndex) {
+                return this.getQuizAnswer(mode, termIndex) !== null;
+            }
+            
+            getStats() {
+                return { ...this.data.sessionStats };
+            }
+            
+            getFilteredDefinitions(filter) {
+                if (filter === 'unknown') {
+                    return definitions.filter((_, index) => this.getCardStatus(index) === 'unknown');
+                } else if (filter === 'known') {
+                    return definitions.filter((_, index) => this.getCardStatus(index) === 'known');
+                } else if (filter === 'neutral') {
+                    return definitions.filter((_, index) => this.getCardStatus(index) === 'neutral');
+                }
+                return definitions;
+            }
+            
+            resetProgress() {
+                this.data = { cardStatus: {}, quizAnswers: {}, sessionStats: { total: 0, known: 0, unknown: 0 } };
+                this.saveToStorage();
+            }
+        }
+        
+        const learningCache = new LearningCache();
 
         const settingsView = document.getElementById('settings-view');
         const mainView = document.getElementById('main-view');
@@ -374,6 +591,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             populateTermSelection();
             setupSearchFunctionality();
+            setupDashboardFilters();
+            updateProgressDashboard();
         });
 
         function populateTermSelection(termsToShow = definitions, searchTerm = '') {
@@ -389,8 +608,20 @@
             
             sortedTerms.forEach((def) => {
                 const originalIndex = definitions.findIndex(d => d.term === def.term && d.definition === def.definition);
+                const status = learningCache.getCardStatus(originalIndex);
+                
                 const label = document.createElement('label');
-                label.className = 'flex items-center p-2 bg-white rounded-md hover:bg-gray-100 transition cursor-pointer';
+                label.className = 'flex items-center justify-between p-2 bg-white rounded-md hover:bg-gray-100 transition cursor-pointer term-selection-item';
+                
+                // Status-Indikator
+                let statusIndicator = '';
+                if (status === 'known') {
+                    statusIndicator = '<span class="w-3 h-3 bg-green-500 rounded-full flex-shrink-0" title="Gewusst"></span>';
+                } else if (status === 'unknown') {
+                    statusIndicator = '<span class="w-3 h-3 bg-red-500 rounded-full flex-shrink-0" title="Nicht gewusst"></span>';
+                } else {
+                    statusIndicator = '<span class="w-3 h-3 bg-gray-300 rounded-full flex-shrink-0" title="Noch nicht bewertet"></span>';
+                }
                 
                 // Hervorhebung des Suchbegriffs (nur in Begriffsnamen)
                 let displayTerm = def.term;
@@ -406,14 +637,19 @@
                     : true; // Standardmäßig ausgewählt für neue Begriffe
                 
                 label.innerHTML = `
-                    <input type="checkbox" class="term-checkbox h-4 w-4 rounded border-gray-300 accent-[--eb-teal] focus:ring-[--eb-teal]" data-index="${originalIndex}" ${isChecked ? 'checked' : ''}>
-                    <span class="ml-2 text-sm text-gray-700">${displayTerm}</span>
+                    <div class="flex items-center flex-grow min-w-0">
+                        <input type="checkbox" class="term-checkbox h-4 w-4 rounded border-gray-300 accent-[--eb-teal] focus:ring-[--eb-teal] flex-shrink-0" data-index="${originalIndex}" ${isChecked ? 'checked' : ''}>
+                        <span class="ml-2 text-sm text-gray-700 break-words">${displayTerm}</span>
+                    </div>
+                    ${statusIndicator}
                 `;
                 termSelectionContainer.appendChild(label);
             });
             
             // Auswahlzähler aktualisieren
             updateSelectionCount();
+            // Dashboard aktualisieren
+            updateProgressDashboard();
         }
 
         function updateSelectionCount() {
@@ -486,6 +722,53 @@
             });
         }
         
+        function updateProgressDashboard() {
+            const stats = learningCache.getStats();
+            const totalTerms = definitions.length;
+            const evaluatedTerms = stats.known + stats.unknown;
+            const neutralTerms = totalTerms - evaluatedTerms;
+            const progressPercentage = totalTerms > 0 ? Math.round((evaluatedTerms / totalTerms) * 100) : 0;
+            
+            // Update counters
+            document.getElementById('total-terms').textContent = totalTerms;
+            document.getElementById('known-count').textContent = stats.known;
+            document.getElementById('unknown-count').textContent = stats.unknown;
+            document.getElementById('neutral-count').textContent = neutralTerms;
+            
+            // Update progress bar
+            document.getElementById('progress-bar').style.width = progressPercentage + '%';
+            document.getElementById('progress-text').textContent = `${progressPercentage}% bewertet`;
+        }
+        
+        function setupDashboardFilters() {
+            document.getElementById('filter-all').addEventListener('click', () => {
+                filteredDefinitions = [...definitions];
+                populateTermSelection(filteredDefinitions);
+            });
+            
+            document.getElementById('filter-unknown').addEventListener('click', () => {
+                filteredDefinitions = learningCache.getFilteredDefinitions('unknown');
+                populateTermSelection(filteredDefinitions);
+            });
+            
+            document.getElementById('filter-known').addEventListener('click', () => {
+                filteredDefinitions = learningCache.getFilteredDefinitions('known');
+                populateTermSelection(filteredDefinitions);
+            });
+            
+            document.getElementById('filter-neutral').addEventListener('click', () => {
+                filteredDefinitions = learningCache.getFilteredDefinitions('neutral');
+                populateTermSelection(filteredDefinitions);
+            });
+            
+            document.getElementById('reset-progress').addEventListener('click', () => {
+                if (confirm('Möchten Sie wirklich Ihren gesamten Lernfortschritt zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+                    learningCache.resetProgress();
+                    location.reload();
+                }
+            });
+        }
+        
         selectAllBtn.addEventListener('click', () => {
             document.querySelectorAll('.term-checkbox').forEach(cb => cb.checked = true);
             updateSelectionCount();
@@ -513,8 +796,15 @@
             currentMode = document.querySelector('input[name="mode"]:checked').value;
             currentTermIndex = 0;
             score = 0;
+            
+            // Start new session for tests - clear previous session answers
+            if (currentMode.startsWith('test')) {
+                learningCache.startNewSession();
+                learningCache.clearSessionAnswers();
+            }
 
             settingsView.classList.add('hidden');
+            document.getElementById('progress-dashboard').classList.add('hidden');
             mainView.classList.remove('hidden');
             
             loadView();
@@ -539,12 +829,15 @@
             }
         }
 
-        function createNavigation(isTest = false, showCheck = false) {
+        function createNavigation(isTest = false, showCheck = false, showSkip = false) {
              const progressText = `${isTest ? 'Frage' : 'Karte'} ${currentTermIndex + 1} von ${currentSessionTerms.length}`;
              const scoreText = isTest ? ` | Punkte: ${score}` : '';
              let buttonsHTML = `<button id="prev-btn" class="bg-gray-200 hover:bg-gray-300 text-[--eb-medium-blue] font-bold py-2 px-6 rounded-lg transition ${currentTermIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentTermIndex === 0 ? 'disabled' : ''}>Zurück</button>`;
              if (showCheck) {
                  buttonsHTML += `<button id="check-btn" class="bg-[--eb-medium-blue] hover:bg-[--eb-dark-blue] text-white font-bold py-2 px-6 rounded-lg transition">Prüfen</button>`;
+             }
+             if (showSkip) {
+                 buttonsHTML += `<button id="skip-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition">Überspringen</button>`;
              }
              buttonsHTML += `<button id="next-btn" class="bg-[--eb-teal] hover:bg-[#358f8f] text-white font-bold py-2 px-6 rounded-lg transition">${currentTermIndex === currentSessionTerms.length - 1 ? 'Beenden' : 'Weiter'}</button>`;
             return `
@@ -570,10 +863,14 @@
                 });
             }
             const nextBtn = document.getElementById('next-btn');
-            if (nextBtn && !isTest) {
-                 nextBtn.addEventListener('click', () => {
-                    currentTermIndex++;
-                    loadView();
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (currentTermIndex < currentSessionTerms.length - 1) {
+                        currentTermIndex++;
+                        loadView();
+                    } else {
+                        showEndScreen();
+                    }
                 });
             }
         }
@@ -581,14 +878,31 @@
         function backToSettings() {
              mainView.classList.add('hidden');
              settingsView.classList.remove('hidden');
+             document.getElementById('progress-dashboard').classList.remove('hidden');
              mainView.innerHTML = '';
+             
+             // Cache-basierte Aktualisierung ohne Neuladen
+             updateProgressDashboard();
+             populateTermSelection(filteredDefinitions);
         }
 
         function showLearnView() {
             const item = currentSessionTerms[currentTermIndex];
+            const termIndex = definitions.findIndex(def => def.term === item.term);
+            const currentStatus = learningCache.getCardStatus(termIndex);
+            
+            // Status indicator HTML
+            let statusIndicator = '';
+            if (currentStatus === 'known') {
+                statusIndicator = '<div class="absolute top-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white" title="Gewusst"></div>';
+            } else if (currentStatus === 'unknown') {
+                statusIndicator = '<div class="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-white" title="Nicht gewusst"></div>';
+            }
+            
             mainView.innerHTML = `
                 <div class="w-full max-w-2xl h-96 card-container">
                     <div class="relative w-full h-full card">
+                        ${statusIndicator}
                         <div class="card-face card-face-front">
                             <div class="card-header w-full bg-[--eb-dark-blue]">Begriff</div>
                             <div class="card-content flex-grow flex items-center justify-center">
@@ -603,11 +917,51 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Schnelle Bewertungsbuttons -->
+                <div class="mt-6 flex justify-center gap-3">
+                    <button id="mark-unknown-next" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium">
+                        Nicht gewusst
+                    </button>
+                    <button id="mark-neutral-next" class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition font-medium">
+                        Überspringen
+                    </button>
+                    <button id="mark-known-next" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium">
+                        Gewusst
+                    </button>
+                </div>
+                
                 ${createNavigation()}
             `;
             const card = mainView.querySelector('.card');
             card.addEventListener('click', () => card.classList.toggle('is-flipped'));
+            
+            // Add rating button listeners with automatic navigation
+            document.getElementById('mark-known-next').addEventListener('click', () => {
+                learningCache.setCardStatus(termIndex, 'known');
+                nextCard();
+            });
+            
+            document.getElementById('mark-unknown-next').addEventListener('click', () => {
+                learningCache.setCardStatus(termIndex, 'unknown');
+                nextCard();
+            });
+            
+            document.getElementById('mark-neutral-next').addEventListener('click', () => {
+                learningCache.setCardStatus(termIndex, 'neutral');
+                nextCard();
+            });
+            
             attachNavListeners();
+        }
+        
+        function nextCard() {
+            if (currentTermIndex < currentSessionTerms.length - 1) {
+                currentTermIndex++;
+                loadView();
+            } else {
+                showEndScreen();
+            }
         }
         
         function normalizeText(text) {
@@ -616,112 +970,334 @@
 
         function showTestTermView() {
             const item = currentSessionTerms[currentTermIndex];
+            const termIndex = definitions.findIndex(def => def.term === item.term);
+            const previousAnswer = learningCache.getQuizAnswer('test-term', termIndex);
+            const isAlreadyAnswered = previousAnswer !== null && !previousAnswer.isSkipped;
+            
+            let textareaHTML, checkButtonHTML, feedbackHTML = '';
+            
+            if (isAlreadyAnswered) {
+                // Show view-only mode with previous answer (not skipped) - EXACTLY like after clicking "Prüfen"
+                let displayAnswer = previousAnswer.userAnswer;
+                if (displayAnswer === undefined || displayAnswer === null || displayAnswer === 'undefined') {
+                    displayAnswer = '';
+                }
+                // Use DISABLED textarea (like after checking), not gray div
+                textareaHTML = `<textarea id="answer-input" class="w-full h-40 p-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-[--eb-teal] focus:border-[--eb-teal]" placeholder="Ihre Definition..." disabled>${displayAnswer}</textarea>`;
+                checkButtonHTML = ''; // No buttons for already answered questions
+                
+                // NO feedbackHTML here - we'll set it via JavaScript like the direct check does
+                feedbackHTML = '';
+            } else {
+                // Show interactive mode (new or skipped)
+                const previousText = (previousAnswer && previousAnswer.isSkipped) ? '' : 
+                                   (previousAnswer && previousAnswer.userAnswer !== undefined && previousAnswer.userAnswer !== null ? previousAnswer.userAnswer : '');
+                textareaHTML = `<textarea id="answer-input" class="w-full h-40 p-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-[--eb-teal] focus:border-[--eb-teal]" placeholder="Ihre Definition...">${previousText}</textarea>`;
+                checkButtonHTML = `
+                    <div class="mt-4 flex gap-3">
+                        <button id="check-btn" class="bg-[--eb-dark-blue] text-white px-6 py-2 rounded-lg hover:bg-[--eb-medium-blue] transition">Prüfen</button>
+                        <button id="show-solution-btn" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition">Lösung anzeigen</button>
+                    </div>`;
+            }
+            
             mainView.innerHTML = `
-                <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                    <p class="text-gray-500 mb-2">Definieren Sie den folgenden Begriff:</p>
+                <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border border-gray-200 definition-quiz">
+                    <p class="text-gray-500 mb-2">Definieren Sie den folgenden Begriff: ${isAlreadyAnswered ? '(bereits beantwortet)' : ''}</p>
                     <h2 class="text-3xl font-bold mb-6 text-[--eb-dark-blue]">${item.term}</h2>
-                    <textarea id="answer-input" class="w-full h-48 p-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-[--eb-teal] focus:border-[--eb-teal]" placeholder="Ihre Definition..."></textarea>
+                    ${textareaHTML}
+                    ${checkButtonHTML || ''}
                     <div id="feedback" class="mt-4 p-4 rounded-lg hidden whitespace-pre-wrap"></div>
+                    ${feedbackHTML}
                 </div>
-                ${createNavigation(true, true)}
+                ${createNavigation(true, false, !isAlreadyAnswered)}
             `;
             attachNavListeners(true);
             
-            document.getElementById('check-btn').addEventListener('click', () => {
-                const userAnswer = document.getElementById('answer-input').value;
+            // Set feedback for already answered questions - EXACTLY like direct checking does
+            if (isAlreadyAnswered) {
                 const feedbackEl = document.getElementById('feedback');
-                const cleanUserAnswer = normalizeText(userAnswer);
-                const cleanCorrectAnswer = normalizeText(item.definition);
-
-                const diff = Diff.diffWords(cleanCorrectAnswer, cleanUserAnswer, { ignoreCase: true });
-                let changes = 0;
-                diff.forEach(part => {
-                    if(part.added || part.removed) changes += part.count;
-                });
-                
-                const totalWords = cleanCorrectAnswer.split(' ').length;
-                const errorPercentage = totalWords > 0 ? (changes / totalWords) * 100 : (changes > 0 ? 100 : 0);
-                
                 feedbackEl.classList.remove('hidden');
                 
-                if (errorPercentage < 15) {
-                    feedbackEl.innerHTML = `<h4 class="font-bold mb-2">Sehr gut, das ist richtig!</h4>`;
-                    feedbackEl.className = 'mt-4 p-4 rounded-lg correct-answer whitespace-pre-wrap';
-                    score++;
+                if (previousAnswer.isCorrect) {
+                    feedbackEl.innerHTML = `<p class="font-bold">✓ Sehr gut, das ist richtig!</p>`;
+                    feedbackEl.classList.remove('hidden');
+                    feedbackEl.classList.add('correct-answer');
                 } else {
-                    feedbackEl.innerHTML = `<h4 class="font-bold mb-2">Nicht ganz richtig. Hier ist der Vergleich:</h4>
-                    <p class="mt-2 text-sm"><ins style="background-color: #C4F2EE; color: #2B3959; text-decoration: none; padding: 0 2px; border-radius: 3px;">Hinzugefügt</ins> | <del style="background-color: #fecaca; padding: 0 2px; border-radius: 3px;">Entfernt</del></p>`;
-                    const diffResult = document.createElement('div');
-                    diff.forEach(part => {
-                        const span = document.createElement(part.added ? 'ins' : part.removed ? 'del' : 'span');
-                        span.appendChild(document.createTextNode(part.value));
-                        diffResult.appendChild(span);
-                    });
-                    feedbackEl.appendChild(diffResult);
-                    feedbackEl.className = 'mt-4 p-4 rounded-lg wrong-answer whitespace-pre-wrap';
+                    feedbackEl.innerHTML = `<p class="font-bold">✗ Diese Antwort war nicht korrekt</p>
+                    <p class="mt-2"><strong>Korrekte Definition:</strong></p>
+                    <p class="whitespace-pre-wrap">${item.definition}</p>`;
+                    feedbackEl.classList.remove('hidden');
+                    feedbackEl.classList.add('wrong-answer');
                 }
+            }
+            
+            // Only add check functionality if not already answered
+            if (!isAlreadyAnswered) {
+                const checkBtn = document.getElementById('check-btn');
+                const showSolutionBtn = document.getElementById('show-solution-btn');
+                
+                // Function to toggle button visibility based on input
+                function updateButtons() {
+                    const userInput = document.getElementById('answer-input').value.trim();
+                    if (userInput.length > 0) {
+                        checkBtn.style.display = 'inline-block';
+                        showSolutionBtn.style.display = 'none';
+                    } else {
+                        checkBtn.style.display = 'none';
+                        showSolutionBtn.style.display = 'inline-block';
+                    }
+                }
+                
+                // Update buttons on input change
+                document.getElementById('answer-input').addEventListener('input', updateButtons);
+                
+                // Initial button state
+                updateButtons();
+                
+                if (checkBtn) {
+                    checkBtn.addEventListener('click', () => {
+                        const userAnswer = document.getElementById('answer-input').value.trim();
+                        if (!userAnswer) return;
+                        
+                        const feedbackEl = document.getElementById('feedback');
+                        const cleanUserAnswer = normalizeText(userAnswer);
+                        const cleanCorrectAnswer = normalizeText(item.definition);
 
-                document.getElementById('check-btn').classList.add('hidden');
-                document.getElementById('answer-input').disabled = true;
+                        const diff = Diff.diffWords(cleanCorrectAnswer, cleanUserAnswer, { ignoreCase: true });
+                        let changes = 0;
+                        diff.forEach(part => {
+                            if(part.added || part.removed) changes += part.count;
+                        });
+                        
+                        const totalWords = cleanCorrectAnswer.split(' ').length;
+                        const errorPercentage = totalWords > 0 ? (changes / totalWords) * 100 : (changes > 0 ? 100 : 0);
+                        const isCorrect = errorPercentage < 15;
+                        
+                        // Save answer to cache and set card status
+                        learningCache.setQuizAnswer('test-term', termIndex, userAnswer, isCorrect, false);
+                        learningCache.setCardStatus(termIndex, isCorrect ? 'known' : 'unknown');
+                        
+                        feedbackEl.classList.remove('hidden');
+                        
+                        if (isCorrect) {
+                            feedbackEl.innerHTML = `<p class="font-bold">✓ Sehr gut, das ist richtig!</p>`;
+                            feedbackEl.classList.add('correct-answer');
+                            score++;
+                        } else {
+                            feedbackEl.innerHTML = `<p class="font-bold">✗ Diese Antwort war nicht korrekt</p>
+                            <p class="mt-2"><strong>Korrekte Definition:</strong></p>
+                            <p class="whitespace-pre-wrap">${item.definition}</p>`;
+                            feedbackEl.classList.add('wrong-answer');
+                        }
 
-                document.getElementById('next-btn').addEventListener('click', () => {
-                    currentTermIndex++;
-                    loadView();
-                });
-            });
+                        checkBtn.style.display = 'none';
+                        showSolutionBtn.style.display = 'none';
+                        document.getElementById('answer-input').disabled = true;
+                        
+                        // Hide skip button after answering
+                        const skipBtn = document.getElementById('skip-btn');
+                        if (skipBtn) skipBtn.classList.add('hidden');
+                    });
+                }
+                
+                // Add show solution functionality
+                if (showSolutionBtn) {
+                    showSolutionBtn.addEventListener('click', () => {
+                        const feedbackEl = document.getElementById('feedback');
+                        
+                        // Save as skipped
+                        learningCache.setQuizAnswer('test-term', termIndex, '', false, true);
+                        learningCache.setCardStatus(termIndex, 'neutral');
+                        
+                        feedbackEl.classList.remove('hidden');
+                        feedbackEl.innerHTML = `<p class="font-bold">💡 Lösung angezeigt</p>
+                        <p class="mt-2"><strong>Korrekte Definition:</strong></p>
+                        <p class="whitespace-pre-wrap">${item.definition}</p>`;
+                        feedbackEl.classList.add('bg-blue-50', 'border', 'border-blue-200', 'text-blue-800');
+                        
+                        checkBtn.style.display = 'none';
+                        showSolutionBtn.style.display = 'none';
+                        document.getElementById('answer-input').disabled = true;
+                        
+                        // Hide skip button after showing solution
+                        const skipBtn = document.getElementById('skip-btn');
+                        if (skipBtn) skipBtn.classList.add('hidden');
+                    });
+                }
+                
+                // Add skip functionality
+                const skipBtn = document.getElementById('skip-btn');
+                if (skipBtn) {
+                    skipBtn.addEventListener('click', () => {
+                        // Save as skipped (neutral status)
+                        learningCache.setQuizAnswer('test-term', termIndex, '', false, true);
+                        learningCache.setCardStatus(termIndex, 'neutral');
+                        
+                        if (currentTermIndex < currentSessionTerms.length - 1) {
+                            currentTermIndex++;
+                            loadView();
+                        } else {
+                            showEndScreen();
+                        }
+                    });
+                }
+            }
         }
 
         function showTestDefView() {
             const item = currentSessionTerms[currentTermIndex];
-            const wrongAnswers = definitions.filter(d => d.term !== item.term).sort(() => 0.5 - Math.random()).slice(0, 3).map(d => d.term);
-            const options = [item.term, ...wrongAnswers].sort(() => 0.5 - Math.random());
+            const termIndex = definitions.findIndex(def => def.term === item.term);
+            const previousAnswer = learningCache.getQuizAnswer('test-def', termIndex);
+            const isAlreadyAnswered = previousAnswer !== null && !previousAnswer.isSkipped;
+            
             let optionsHTML = '';
-            options.forEach(option => {
-                optionsHTML += `<button class="answer-option w-full text-left p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition border-2 border-transparent">${option}</button>`;
-            });
+            let feedbackHTML = '';
+            
+            if (isAlreadyAnswered) {
+                // Show view-only mode with previous answer (not skipped)
+                const wrongAnswers = definitions.filter(d => d.term !== item.term).sort(() => 0.5 - Math.random()).slice(0, 3).map(d => d.term);
+                const options = [item.term, ...wrongAnswers].sort(() => 0.5 - Math.random());
+                
+                options.forEach(option => {
+                    let buttonClass = 'answer-option w-full text-left p-4 rounded-lg border-2 transition cursor-default';
+                    if (option === item.term) {
+                        buttonClass += ' correct-answer'; // Correct answer
+                    } else if (option === previousAnswer.userAnswer && !previousAnswer.isCorrect) {
+                        buttonClass += ' wrong-answer'; // Wrong answer that was selected
+                    } else {
+                        buttonClass += ' bg-gray-100 border-gray-300'; // Not selected
+                    }
+                    optionsHTML += `<button class="${buttonClass}" disabled>${option}</button>`;
+                });
+                
+                if (previousAnswer.isCorrect) {
+                    feedbackHTML = `<div class="p-4 rounded-lg correct-answer">✓ Diese Antwort war richtig!</div>`;
+                } else {
+                    feedbackHTML = `<div class="p-4 rounded-lg wrong-answer">
+                        <p class="font-bold">✗ Diese Antwort war falsch.</p>
+                        <p class="mt-2"><strong>Korrekte Antwort:</strong> ${item.term}</p>
+                    </div>`;
+                }
+            } else {
+                // Show interactive mode (new or skipped)
+                const wrongAnswers = definitions.filter(d => d.term !== item.term).sort(() => 0.5 - Math.random()).slice(0, 3).map(d => d.term);
+                const options = [item.term, ...wrongAnswers].sort(() => 0.5 - Math.random());
+                
+                options.forEach(option => {
+                    optionsHTML += `<button class="answer-option w-full text-left p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition border-2 border-transparent">${option}</button>`;
+                });
+                
+                // Add solution button below options
+                optionsHTML += `
+                    <div class="mt-4 text-left">
+                        <button id="show-solution-btn" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition">Lösung anzeigen</button>
+                    </div>`;
+            }
 
             mainView.innerHTML = `
-                 <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                    <p class="text-gray-500 mb-2">Welcher Begriff wird hier definiert?</p>
+                 <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border border-gray-200 definition-quiz">
+                    <p class="text-gray-500 mb-2">Welcher Begriff wird hier definiert? ${isAlreadyAnswered ? '(bereits beantwortet)' : ''}</p>
                     <p class="text-lg mb-6 text-[--eb-dark-blue] whitespace-pre-wrap">${item.definition}</p>
                     <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         ${optionsHTML}
                     </div>
-                    <div id="feedback" class="mt-4 p-4 rounded-lg hidden"></div>
+                    <div id="feedback" class="mt-4 p-4 rounded-lg ${isAlreadyAnswered ? '' : 'hidden'}"></div>
+                    ${feedbackHTML}
                 </div>
-                ${createNavigation(true)}
+                ${createNavigation(true, false, !isAlreadyAnswered)}
             `;
 
             attachNavListeners(true);
-            const optionsContainer = document.getElementById('options-container');
+            
+            // Only add click functionality if not already answered
+            if (!isAlreadyAnswered) {
+                const optionsContainer = document.getElementById('options-container');
 
-            optionsContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('answer-option')) {
-                    const userAnswer = e.target.textContent;
-                    const feedbackEl = document.getElementById('feedback');
-                    feedbackEl.classList.remove('hidden');
+                optionsContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('answer-option')) {
+                        const userAnswer = e.target.textContent;
+                        const feedbackEl = document.getElementById('feedback');
+                        const isCorrect = userAnswer === item.term;
+                        
+                        // Save answer to cache and set card status
+                        learningCache.setQuizAnswer('test-def', termIndex, userAnswer, isCorrect, false);
+                        learningCache.setCardStatus(termIndex, isCorrect ? 'known' : 'unknown');
+                        
+                        feedbackEl.classList.remove('hidden');
 
-                    optionsContainer.querySelectorAll('.answer-option').forEach(btn => {
-                        btn.disabled = true;
-                        if (btn.textContent === item.term) btn.classList.add('correct-answer');
-                    });
+                        optionsContainer.querySelectorAll('.answer-option').forEach(btn => {
+                            btn.disabled = true;
+                            if (btn.textContent === item.term) btn.classList.add('correct-answer');
+                        });
 
-                    if (userAnswer === item.term) {
-                        feedbackEl.textContent = 'Richtig!';
-                        feedbackEl.className = 'mt-4 p-4 rounded-lg correct-answer';
-                        score++;
-                    } else {
-                        e.target.classList.add('wrong-answer');
-                        feedbackEl.innerHTML = `Falsch. Die richtige Antwort ist markiert.`;
-                        feedbackEl.className = 'mt-4 p-4 rounded-lg wrong-answer';
+                        if (isCorrect) {
+                            feedbackEl.textContent = '✓ Richtig!';
+                            feedbackEl.className = 'p-4 rounded-lg correct-answer';
+                            score++;
+                        } else {
+                            e.target.classList.add('wrong-answer');
+                            feedbackEl.innerHTML = `<p class="font-bold">✗ Falsch.</p>
+                            <p class="mt-2"><strong>Korrekte Antwort:</strong> ${item.term}</p>`;
+                            feedbackEl.className = 'p-4 rounded-lg wrong-answer';
+                        }
+                        
+                        // Hide skip button and solution button after answering
+                        const skipBtn = document.getElementById('skip-btn');
+                        if (skipBtn) skipBtn.classList.add('hidden');
+                        
+                        const showSolutionBtn = document.getElementById('show-solution-btn');
+                        if (showSolutionBtn) showSolutionBtn.style.display = 'none';
                     }
-                    
-                    document.getElementById('next-btn').addEventListener('click', () => {
-                        currentTermIndex++;
-                        loadView();
+                });
+                
+                // Add show solution functionality
+                const showSolutionBtn = document.getElementById('show-solution-btn');
+                if (showSolutionBtn) {
+                    showSolutionBtn.addEventListener('click', function() {
+                        // Highlight correct answer in blue
+                        optionsContainer.querySelectorAll('.answer-option').forEach(btn => {
+                            if (btn.textContent === item.term) {
+                                btn.classList.remove('bg-gray-100', 'border-transparent');
+                                btn.classList.add('bg-blue-200', 'border-blue-500');
+                            }
+                        });
+                        
+                        // Hide solution button
+                        showSolutionBtn.style.display = 'none';
+                        
+                        // Show feedback
+                        const feedbackEl = document.getElementById('feedback');
+                        feedbackEl.innerHTML = `<p class="text-blue-800 font-bold">Lösung: ${item.term}</p>`;
+                        feedbackEl.className = 'p-4 rounded-lg bg-blue-100 border-2 border-blue-300';
+                        feedbackEl.classList.remove('hidden');
+                        
+                        // Mark as skipped
+                        learningCache.setQuizAnswer('test-def', termIndex, '', false, true);
+                        learningCache.setCardStatus(termIndex, 'neutral');
+                        
+                        // Hide skip button after showing solution
+                        const skipBtn = document.getElementById('skip-btn');
+                        if (skipBtn) skipBtn.classList.add('hidden');
                     });
                 }
-            });
+                
+                // Add skip functionality
+                const skipBtn = document.getElementById('skip-btn');
+                if (skipBtn) {
+                    skipBtn.addEventListener('click', () => {
+                        // Save as skipped (neutral status)
+                        learningCache.setQuizAnswer('test-def', termIndex, '', false, true);
+                        learningCache.setCardStatus(termIndex, 'neutral');
+                        
+                        if (currentTermIndex < currentSessionTerms.length - 1) {
+                            currentTermIndex++;
+                            loadView();
+                        } else {
+                            showEndScreen();
+                        }
+                    });
+                }
+            }
         }
 
         function showEndScreen() {
