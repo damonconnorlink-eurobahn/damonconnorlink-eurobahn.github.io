@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernplattform Fahrdienstvorschrift | eurobahn</title>
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Lernplattform%20Ril%20408%22%2C%22short_name%22%3A%22Ril%20408%20Lernen%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F2F2F2%22%2C%22theme_color%22%3A%22%23273A73%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fwww.eurobahn.de%2Ffileadmin%2Fbilder%2Flogos%2Flogo-eurobahn.svg%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+
+    <!-- iOS Web App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ril 408 Lernen">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- jsdiff Library for text comparison -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.1.0/diff.min.js"></script>
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #F2F2F2; /* Eurobahn Off-White */
+            color: #2B3959; /* Eurobahn Medium Blue */
+        }
+        /* Eurobahn CI Farben */
+        :root {
+            --eb-dark-blue: #273A73;
+            --eb-medium-blue: #2B3959;
+            --eb-teal: #3FA6A6;
+            --eb-light-teal: #C4F2EE;
+            --eb-off-white: #F2F2F2;
+        }
+
+        /* Ladebildschirm */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--eb-off-white);
+            z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+        .loader img {
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        .loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        /* Karten-Design */
+        .card-container {
+            perspective: 1000px;
+        }
+        .card {
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        .card-face-front {
+            background-color: white;
+            justify-content: center;
+            align-items: center;
+        }
+        .card-face-back {
+            background-color: white;
+            transform: rotateY(180deg);
+            justify-content: flex-start;
+        }
+        .card-header {
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 700;
+            color: white;
+            border-radius: 0.75rem 0.75rem 0 0;
+        }
+        .card-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .correct-answer {
+            background-color: #C4F2EE !important;
+            color: var(--eb-dark-blue) !important;
+            border: 2px solid var(--eb-teal) !important;
+        }
+        .wrong-answer {
+            background-color: #fee2e2 !important;
+            color: #991b1b !important;
+            border: 2px solid #fca5a5 !important;
+        }
+        #feedback ins {
+            background-color: #C4F2EE;
+            text-decoration: none;
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+        #feedback del {
+            background-color: #fecaca;
+            text-decoration: line-through;
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Ladebildschirm -->
+    <div id="loader" class="loader">
+        <img src="https://www.eurobahn.de/fileadmin/bilder/logos/logo-eurobahn.svg" alt="Eurobahn Logo" class="h-20">
+    </div>
+
+    <div class="container mx-auto p-4 md:p-8 min-h-screen flex flex-col">
+        <header class="text-center mb-8 border-b-2 border-gray-200 pb-4 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <img src="https://www.eurobahn.de/fileadmin/bilder/logos/logo-eurobahn.svg" alt="Eurobahn Logo" class="h-12 md:h-16">
+            <div class="text-center sm:text-left">
+                <h1 class="text-3xl md:text-4xl font-bold text-[--eb-dark-blue] tracking-wide">Lernplattform</h1>
+                <p class="text-lg text-gray-500">Begriffsdefinitionen Ril 408.2101A01</p>
+            </div>
+        </header>
+
+        <div id="settings-view" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8 w-full max-w-5xl mx-auto">
+            <div id="settings-content">
+                <h2 class="text-2xl font-semibold mb-4 text-[--eb-dark-blue]">1. Einstellungen</h2>
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-3 text-gray-600">Modus auswählen:</h3>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <label class="flex-1 bg-gray-100 p-4 rounded-lg cursor-pointer hover:bg-gray-200 transition duration-200 border has-[:checked]:border-[--eb-teal] has-[:checked]:bg-[--eb-light-teal]">
+                            <input type="radio" name="mode" value="learn" class="mr-3 accent-[--eb-teal]" checked>
+                            <span class="font-semibold">Lernmodus (Karteikarten)</span>
+                        </label>
+                        <label class="flex-1 bg-gray-100 p-4 rounded-lg cursor-pointer hover:bg-gray-200 transition duration-200 border has-[:checked]:border-[--eb-teal] has-[:checked]:bg-[--eb-light-teal]">
+                            <input type="radio" name="mode" value="test-term" class="mr-3 accent-[--eb-teal]">
+                            <span class="font-semibold">Test: Begriff &rarr; Definition</span>
+                        </label>
+                        <label class="flex-1 bg-gray-100 p-4 rounded-lg cursor-pointer hover:bg-gray-200 transition duration-200 border has-[:checked]:border-[--eb-teal] has-[:checked]:bg-[--eb-light-teal]">
+                            <input type="radio" name="mode" value="test-def" class="mr-3 accent-[--eb-teal]">
+                            <span class="font-semibold">Test: Definition &rarr; Begriff</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-semibold mb-4 text-[--eb-dark-blue]">2. Begriffe auswählen</h2>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <button id="select-all" class="bg-[--eb-medium-blue] hover:bg-[--eb-dark-blue] text-white font-bold py-2 px-4 rounded-lg transition duration-200">Alle auswählen</button>
+                        <button id="deselect-all" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-200">Alle abwählen</button>
+                    </div>
+                    <div id="term-selection" class="max-h-64 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button id="start-btn" class="bg-[--eb-teal] hover:bg-[#358f8f] text-white font-bold text-xl py-3 px-10 rounded-lg transition duration-200 shadow-md">Sitzung starten</button>
+                </div>
+            </div>
+            <div id="no-selection-warning" class="hidden text-center text-red-700 font-semibold bg-red-100 p-4 rounded-lg border border-red-300 mt-4">
+                Bitte wählen Sie mindestens einen Begriff aus, um zu starten.
+            </div>
+        </div>
+
+        <main id="main-view" class="hidden flex-grow flex flex-col items-center justify-center w-full"></main>
+
+    </div>
+
+    <script>
+        const definitions = [
+            { term: "Ablaufen, Abdrücken", definition: "Ablaufen ist das Bewegen von Fahrzeugen durch Schwerkraft im Allgemeinen von einem Ablaufberg herab, über den die Fahrzeuge abgedrückt werden." },
+            { term: "Abstellen", definition: "Züge und Triebfahrzeuge sind abgestellt, wenn sie nicht mit einem Triebfahrzeugführer besetzt sind oder nicht gesteuert werden. Wagen sind abgestellt, sofern sie nicht in Züge eingestellt sind oder nicht rangiert werden." },
+            { term: "Abstoßen", definition: "Abstoßen ist das Bewegen geschobener, nicht mit einem arbeitenden Triebfahrzeug gekuppelter Fahrzeuge durch Beschleunigen, so dass die Fahrzeuge allein weiterfahren, nachdem das Triebfahrzeug angehalten hat." },
+            { term: "Abzweigstellen", definition: "Abzweigstellen sind Blockstellen der freien Strecke, wo Züge von einer Strecke auf eine andere Strecke übergehen können. Eine Abzweigstelle wird durch ihre Blocksignale bzw. Signale Ne 14 begrenzt." },
+            { term: "Anschlussbahnhöfe", definition: "Anschlussbahnhöfe haben besondere Aufgaben bei der Meldung der Züge." },
+            { term: "Anschlussstellen, Ausweichanschlussstellen", definition: "Anschlussstellen sind Bahnanlagen der freien Strecke, wo Züge ein angeschlossenes Gleis als Rangierfahrt befahren können. Es sind zu unterscheiden:\na) Anschlussstellen, bei denen die Blockstrecke nicht für einen anderen Zug freigegeben wird,\nb) Anschlussstellen, bei denen die Blockstrecke für einen anderen Zug freigegeben wird (Ausweichanschlussstellen)." },
+            { term: "Anzeigegeführt", definition: "Ein Zug ist anzeigegeführt, wenn eine Zugbeeinflussung (LZB, ETCS) wirkt, die den Zug selbsttätig zum Halten bringen kann und außerdem führt, d. h. Führungsgrößen im Führerraum anzeigt, die für den Fahrtverlauf zulässigen Geschwindigkeiten kontinuierlich überwacht und ggf. die Geschwindigkeit selbsttätig regelt. Anzeigegeführte Züge können LZB-geführt oder ETCS-geführt sein." },
+            { term: "Arbeitendes Triebfahrzeug", definition: "Ein Triebfahrzeug ist arbeitend, wenn es Antriebskraft erzeugt." },
+            { term: "aS-Zug", definition: "aS-Züge sind Züge mit häufig vorkommenden außergewöhnlichen Sendungen, die im Fahrplan für Zugmeldestellen und Streckenfahrplan durch den Zusatz „aS“ hinter der Zugnummer gekennzeichnet sind." },
+            { term: "Aufdrücken", definition: "Aufdrücken ist das Bewegen von Fahrzeugen zum Entkuppeln oder von kuppelreif stehenden Fahrzeugen zum Kuppeln." },
+            { term: "Aufgehobene Signalabhängigkeit", definition: "Signalabhängigkeit ist in folgenden Fällen aufgehoben:\nEin Hauptsignal kann auf Fahrt gestellt werden und eine Fachkraft hat im Arbeits- und Störungsbuch die Abhängigkeit für aufgehoben erklärt.\nEin Hauptsignal kann auf Fahrt gestellt werden und die Zungen- oder Herzstückverschlüsse von Weichen wirken nicht ordnungsgemäß.\nBei einer virtuellen Blockstelle entspricht deren Fahrtmelder der Fahrtstellung des Hauptsignals." },
+            { term: "Bahnanlagen", definition: "Es gibt Bahnanlagen der Bahnhöfe, der freien Strecke und sonstige Bahnanlagen." },
+            { term: "Bahnbetrieb", definition: "Bahnbetrieb ist das Bewegen von Fahrzeugen. Zum Bahnbetrieb gehören das Fahren von Zügen und das Rangieren." },
+            { term: "Bahnhöfe, Bahnhofsteile", definition: "Bahnhöfe sind Bahnanlagen mit mindestens einer Weiche, wo Züge beginnen, enden, halten, kreuzen, überholen oder wenden dürfen. Bahnhöfe können in Bahnhofsteile unterteilt sein. Bahnhofsteile können durch Zwischensignale bzw. Signale Ne 14 gegeneinander abgegrenzt sein." },
+            { term: "Balise, Balisengruppe", definition: "Eine Balise ist ein im Gleis angeordnetes Datenübertragungselement. Bei ETCS übertragen Balisen Informationen zur Fahrzeugortung. Um die Fahrtrichtung eindeutig herleiten zu können, können Balisen zu einer Balisengruppe zusammengefasst sein. Bei ETCS-Level 1 übertragen schaltbare Balisen zusätzlich zur Ortung auch ETCS-Fahrterlaubnisse. An Signalen Ne 14 sind Balisen mit der Information „Halt in ETCS-Betriebsart SR“ verlegt. Bei Neigetechnik übertragen Balisen Informationen für die Geschwindigkeitsüberwachung für Neigetechnik." },
+            { term: "Bedarfshalt", definition: "Ein Bedarfshalt ist ein Fahrplanhalt, bei dem ein Zug auf der Betriebsstelle halten muss, wenn:\n- der Triebfahrzeugführer ein Haltsignal oder ein blinkendes Signal Ne 5 erhält,\n- der Triebfahrzeugführer Reisende bemerkt, die ein- oder aussteigen wollen,\n- die Fahrgasthaltewunscheinrichtung dem Triebfahrzeugführer einen Haltewunsch anzeigt oder\n- der Triebfahrzeugführer nicht verständigt wurde, dass der Halt ausfallen darf." },
+            { term: "Beidrücken", definition: "Beidrücken ist das Bewegen getrennt stehender Fahrzeuge zum Kuppeln." },
+            { term: "Betriebliche Abfahrtszeit", definition: "Die betriebliche Abfahrtzeit ist für die Abfahrt des Zuges auf einer Betriebsstelle maßgeblich. In den Fahrplänen dieser Betriebsstellen können daneben auch verkehrliche Abfahrtzeiten veröffentlich sein." },
+            { term: "Betriebshalt", definition: "Ein Betriebshalt ist ein Fahrplanhalt, bei dem ein Zug auf der Betriebsstelle halten muss, wenn der Triebfahrzeugführer ein Haltsignal erhält." },
+            { term: "Betriebsstellen", definition: "Betriebsstellen sind:\na) Bahnhöfe, Blockstellen, Abzweigstellen, Anschlussstellen, Haltepunkte, Haltestellen, Deckungsstellen oder\nb) Stellen in den Bahnhöfen oder auf der freien Strecke, die der unmittelbaren Regelung und Sicherung der Zugfahrten und des Rangierens dienen." },
+            { term: "Blockstellen", definition: "Blockstellen sind Bahnanlagen, die eine Blockstrecke begrenzen. Eine Blockstelle kann zugleich als Bahnhof, Abzweigstelle, Überleitstelle, Anschlussstelle, Haltepunkt, Haltestelle oder Deckungsstelle eingerichtet sein. Es gibt Blockstellen für signalgeführte Züge, für anzeigegeführte Züge und für Züge in ETCS-Betriebsart SR. Blockstellen für signalgeführte Züge sind an Hauptsignalen eingerichtet. Blockstellen für anzeigegeführte Züge sind eingerichtet an Hauptsignalen oder als virtuelle Blockstellen. Blockstellen für Züge in ETCS-Betriebsart SR sind an Signalen Ne 14 eingerichtet." },
+            { term: "Blockstrecken", definition: "Blockstrecken sind Gleisabschnitte, in die ein Zug nur einfahren darf, wenn sie frei von Fahrzeugen sind. Es gibt Blockstrecken für signalgeführte und für anzeigegeführte Züge." },
+            { term: "Deckungsstellen", definition: "Deckungsstellen sind Bahnanlagen der freien Strecke, die den Bahnbetrieb insbesondere an beweglichen Brücken, Kreuzungen von Bahnen, Gleisverschlingungen oder Baustellen sichern." },
+            { term: "Durchgehende Hauptgleise", definition: "Durchgehende Hauptgleise sind die Hauptgleise der freien Strecke und ihre Fortsetzung in den Bahnhöfen." },
+            { term: "Einfahrweiche", definition: "Die Einfahrweiche ist die erste Weiche eines Bahnhofs, die bei Einfahrt von der freien Strecke her befahren wird." },
+            { term: "ETCS-Fahrterlaubnis", definition: "Die ETCS-Fahrterlaubnis ist die Erlaubnis für einen ETCS-geführten Zug, bis zu einer bestimmten Stelle, dem ETCS-Halt, zu fahren." },
+            { term: "ETCS-Halt", definition: "Ein ETCS-Halt ist die Stelle, an der die ETCS-Fahrterlaubnis eines ETCS-geführten Zuges endet. Dem Triebfahrzeugführer wird ein ETCS-Halt durch eine Zielgeschwindigkeit von 0 km/h angekündigt und durch eine Sollgeschwindigkeit von 0 km/h angezeigt. In ETCS-Betriebsart SR wird dem Triebfahrzeugführer ein ETCS-Halt durch ein Signal Ne 14 angezeigt." },
+            { term: "ETCS-Zentrale", definition: "Zu einer ETCS-Zentrale gehören:\n- die ETCS-Bedieneinrichtung,\n- ein sicheres Rechnersystem und\n- die Schnittstellen zu den Stellwerken, ETCS-Nachbarzentralen und zum GSM-R." },
+            { term: "Fahrdienstleiter", definition: "Fahrdienstleiter regeln die Durchführung der Zugfahrten. Fahrdienstleiter dürfen auch die Tätigkeiten von Weichenwärtern verrichten. Fahrdienstleiter und Weichenwärter sind in den Richtlinien 408.01-06 und 408.48 zusammenfassend in Kurzform auch als „Bediener“ angesprochen. Ein Bahnhof kann in mehrere Fahrdienstleiterbezirke aufgeteilt sein. Selbsttätige Blockstellen des automatischen Streckenblocks sind auf zweigleisigen Strecken dem Fahrdienstleiter der vorgelegenen Zugmeldestelle, auf eingleisigen Strecken einem festgelegten Fahrdienstleiter zugeteilt. Selbsttätige Blockstellen der übrigen Blockbauformen, Blockstellen für anzeigegeführte Züge oder örtlich nicht besetzte Bahnhöfe oder Abzweigstellen gelten als mit dem Fahrdienstleiter besetzt, der die Signalanlagen dieser Stellen bedient." },
+            { term: "Fahrplanhalt", definition: "Es gibt folgende Fahrplanhalte: Regelhalt, Bedarfshalt, Betriebshalt und Halt zum Sichern eines Bahnübergangs." },
+            { term: "Fahrtstellung eines Hauptsignals, Hauptsignal auf Fahrt stellen", definition: "Fahrtstellung eines Hauptsignals bzw. Formulierungen wie „ein Hauptsignal auf Fahrt stellen“ umfassen jede Signalstellung eines Hauptsignals, die es dem Triebfahrzeugführer eines Zuges erlaubt, an dem Signal vorbeizufahren, z. B. Signal Hp 2, Ks 1, HI 3a, Sv 4. An einer virtuellen Blockstelle entspricht der Fahrtstellung des Hauptsignals der entsprechende Fahrtmelder." },
+            { term: "Fahrzeuge", definition: "Fahrzeuge werden unterschieden nach Regelfahrzeugen und Nebenfahrzeugen." },
+            { term: "Fahrzeuge mit unzureichender Belegung von 42 Hz und 100 Hz-Gleisstromkreisen", definition: "Regelfahrzeuge oder schwere Nebenfahrzeuge, welche die Gleisfreimeldeanlagen der 42 Hz oder 100 Hz-Gleisstrom-Technik (Bauform WSSB) während der Fahrt nicht zuverlässig erkennen können, werden als \"Fahrzeuge mit unzureichender Belegung von 42 Hz und 100 Hz-Gleisstromkreisen\" bezeichnet." },
+            { term: "Fehlleitung, fehlleiten", definition: "Ein Zug wird fehlgeleitet, wenn er in einen Fahrweg eingelassen wird, der nicht seinem Fahrplan oder seinem Auftrag entspricht." },
+            { term: "Flankenschutzeinrichtungen", definition: "Flankenschutzeinrichtungen sind signaltechnische Einrichtungen, die Fahrten auf Fahrstraßen gegen Fahrzeugbewegungen schützen. Zu den Flankenschutzeinrichtungen gehören Weichen, Gleissperren, Sperrsignale, Hauptsignale ohne Signal Zs 103, Signale Ra 11 (DS 301) mit Lichtsignal Sh 1, sofern technisch ausgeschlossen ist, dass das Signal Sh 1 erteilt werden kann, solange das Wartezeichen als Flankenschutz für eine Zugfahrt dient, Signale Ra 11 a (DV 301) und alleinstehende Signale Ne 14." },
+            { term: "Flankenschutzraum", definition: "Flankenschutzraum ist der Raum zwischen einer Flankenschutzeinrichtung oder einem Signal Ne 14 und dem Grenzzeichen einer Weiche oder Kreuzung im Fahrweg oder Durchrutschweg." },
+            { term: "Führungsgrößen", definition: "Sollgeschwindigkeit, Zielgeschwindigkeit und Zielentfernung werden bei anzeigegeführten Zügen als Führungsgrößen bezeichnet und im Führerraum angezeigt." },
+            { term: "FS (Full Supervision)", definition: "Betriebsart bei ETCS, bei der ein Zug in Vollüberwachung fährt, und zwar mit einer ETCS-Fahrterlaubnis, die ETCS dem Triebfahrzeugführer mit Führungsgrößen und einem Symbol in der Führerraumanzeige anzeigt." },
+            { term: "Gegengleis", definition: "Das Gleis, das auf zweigleisiger, freier Strecke entgegen der gewöhnlichen Fahrtrichtung befahren wird, wird als Gegengleis bezeichnet." },
+            { term: "Geschobene Züge", definition: "Geschobene Züge sind Züge, in denen kein arbeitendes Triebfahrzeug an der Spitze läuft oder von der Spitze aus gesteuert wird. Züge, die aus einem Nebenfahrzeug mit Kraftantrieb und einem vorangestellten Nebenfahrzeug ohne Kraftantrieb oder aus einem Triebfahrzeug und einem vorangestellten Schneeräumfahrzeug gebildet sind, sind keine geschobenen Züge, wenn die Fahrzeuge eine bauartkompatible Einheit bilden." },
+            { term: "Gewöhnlicher Halteplatz", definition: "Der gewöhnliche Halteplatz ist die Stelle, an der ein Zug bei einem planmäßigen Halt dem Zweck des Haltes entsprechend halten muss. Im Einzelnen gilt Folgendes:\nDer gewöhnliche Halteplatz eines Reisezuges mit Betriebshalt oder eines Güterzuges ist möglichst nahe am Halt gebietenden Signal, vor dem LZB-Halt bzw. vor dem ETCS-Halt.\nDer gewöhnliche Halteplatz eines Reisezuges mit Regelhalt oder Bedarfshalt ist am Bahnsteig, hierbei müssen sich in der Regel alle für Reisende zum Ein- und Aussteigen vorgesehenen Türen am Bahnsteig befinden.\nDie Regeln zum gewöhnlichen Halteplatz gelten nicht für Halte zum Sichern eines Bahnüberganges." },
+            { term: "Gleiswechselbetrieb", definition: "Gleiswechselbetrieb ist eingerichtet, wo das Gegengleis mit Hauptsignal und Signal Zs 6 befahren werden kann. Gleiswechselbetrieb kann ständig oder vorübergehend eingerichtet sein. Vorübergehend eingerichteter Gleiswechselbetrieb wird in einer Betra angeordnet." },
+            { term: "Grenze zwischen Bahnhof und freier Strecke", definition: "Als Grenze zwischen den Bahnhöfen und der freien Strecke gelten im Allgemeinen die Einfahrsignale bzw. die sie ersetzenden Signale Ne 14 oder Trapeztafeln, sonst die Einfahrweichen. Bei besonderen örtlichen Verhältnissen kann die Grenze anderweitig festgelegt sein. Bahnhofsgleise und andere Anlagen neben den durchgehenden Hauptgleisen, die über die Grenze hinausreichen, gehören zu den Bahnhofsanlagen." },
+            { term: "Grenzsignal", definition: "Ein Grenzsignal ist ein Hauptsignal, an dem eine Strecke mit ETCS beginnt oder endet." },
+            { term: "Halt zum Sichern eines Bahnüberganges", definition: "Ein Halt zum Sichern eines Bahnüberganges ist ein Fahrplanhalt, bei dem ein Zug vor dem Bahnübergang anhalten muss, weil der Bahnübergang planmäßig durch Zugpersonal oder durch andere Mitarbeiter gesichert werden muss." },
+            { term: "Haltepunkte", definition: "Haltepunkte sind Bahnanlagen ohne Weichen, wo Züge planmäßig halten, beginnen oder enden dürfen." },
+            { term: "Haltestellen", definition: "Haltestellen sind Abzweigstellen, Überleitstellen oder Anschlussstellen, die mit einem Haltepunkt örtlich verbunden sind." },
+            { term: "Hauptgleise", definition: "Hauptgleise sind die von Zügen planmäßig befahrenen Gleise." },
+            { term: "IS (Isolation)", definition: "Betriebsart bei ETCS, wenn das ETCS-Fahrzeuggerät mit dem Störschalter ausgeschaltet ist. Es sind keine Eingaben und Anzeigen über die Fahrzeugeinrichtung möglich. Der Zug kann ohne ETCS-Fahrterlaubnis fahren." },
+            { term: "Kleinwagen", definition: "Kleinwagen sind Nebenfahrzeuge, die Gleisschaltmittel oder Gleisfreimeldeanlagen nicht zuverlässig beeinflussen." },
+            { term: "Kleinwagenfahrten", definition: "Kleinwagenfahrten sind Fahrten, die aus Kleinwagen gebildet sind oder in die Kleinwagen eingestellt sind. Sie dürfen nur als Sperrfahrt oder Rangierfahrt verkehren. Kleinwagenfahrten als Sperrfahrten sind nach den Regeln für Zugfahrten unter Beachtung der für Kleinwagenfahrten geltenden Besonderheiten durchzuführen. Kleinwagenfahrten als Rangierfahrten sind nach den Regeln für das Rangieren unter Beachtung der für Kleinwagen geltenden Besonderheiten durchzuführen." },
+            { term: "Kontaktstelle", definition: "Kontaktstelle ist:\na) die Zugmeldestelle, die während der Arbeitsunterbrechung der überwachenden Zugmeldestelle bei der Notfallleitstelle für ein der überwachenden Zugmeldestelle zugeordnetes, gesperrtes Gleis Hilfe aufrufen muss,\nb) die Betriebsstelle, die die Meldungen zu Arbeitsende und Arbeitsbeginn bei unterbrochener Arbeitszeit entgegennimmt und der Besonderheiten während der unterbrochenen Arbeitszeit gemeldet werden." },
+            { term: "Kreuzen", definition: "Beim Kreuzen wartet ein Zug auf einer Zugmeldestelle, weil der Zugfolgeabschnitt, in den er eingelassen werden soll, noch durch einen in der Gegenrichtung fahrenden Zug beansprucht wird." },
+            { term: "Mitarbeiter", definition: "Mitarbeiter, im Sinne des bahnbetrieblichen Regelwerks, sind Personen, die Tätigkeiten im Bahnbetrieb selbstständig nur verrichten dürfen, wenn sie für diese Tätigkeiten geprüft und mit ihrer Ausführung beauftragt sind." },
+            { term: "Nachgeschobene Züge", definition: "Nachgeschobene Züge sind Züge, in denen mindestens ein arbeitendes Triebfahrzeug an der Spitze läuft oder von der Spitze aus gesteuert wird und in denen bis zu zwei arbeitende Triebfahrzeuge laufen, die nicht von der Spitze aus gesteuert werden." },
+            { term: "Nebenfahrzeuge", definition: "Nebenfahrzeuge werden unterschieden in Nebenfahrzeuge mit Kraftantrieb und in Nebenfahrzeuge ohne Kraftantrieb. Bestimmungen für Triebfahrzeuge gelten auch für Nebenfahrzeuge mit Kraftantrieb, sofern es nicht im Einzelfall anders bestimmt ist." },
+            { term: "Nebengleise", definition: "Nebengleise sind Gleise, die planmäßig nicht von Zügen befahren werden." },
+            { term: "NL (Non Leading)", definition: "Betriebsart bei ETCS, die der Triebfahrzeugführer der Zuglokomotive bei Vorspann bzw. eines mit dem Zug gekuppelten Schiebetriebfahrzeuges wählen muss." },
+            { term: "Notbremsüberbrückungsabschnitt", definition: "Ein Notbremsüberbrückungsabschnitt ist ein durch NBÜ-Kennzeichen gekennzeichneter Abschnitt, in dem Züge bei einer Notbremsung nicht anhalten sollen." },
+            { term: "NP (No Power)", definition: "Betriebsart bei ETCS, in die das ETCS-Fahrzeuggerät wechselt, wenn die Stromversorgung ausgeschaltet ist." },
+            { term: "Ortsstellbereich", definition: "Ein Ortsstellbereich ist ein Bereich in Nebengleisen mit ortsgestellten Weichen und Gleissperren, in dem ausschließlich rangiert wird. Die Weichen und Gleissperren werden einzeln ggf. in Gruppen (elektrischer Antrieb) umgestellt. Die Bedienung erfolgt durch das Rangierpersonal. Zug- und Rangierstraßen sind nicht vorhanden. Ein für eine Rangierfahrt Halt gebietendes Signal begrenzt Ortsstellbereiche nach außen. Der Beginn eines Ortsstellbereiches kann durch ein Orientierungszeichen nach Richtlinie 301.9001 gekennzeichnet sein." },
+            { term: "OS (On Sight)", definition: "Betriebsart bei ETCS, bei der ein Zug auf Sicht fahren muss, und zwar mit einer ETCS-Fahrterlaubnis, die dem Triebfahrzeugführer mit einem Symbol in der Führerraumanzeige angezeigt wird. ETCS überwacht die maximal zulässige Geschwindigkeit für Fahren auf Sicht und das Ende der ETCS-Fahrterlaubnis." },
+            { term: "Override EOA", definition: "Funktion im ETCS-Fahrzeuggerät, die es dem Triebfahrzeugführer ermöglicht, aus den ETCS-Betriebsarten FS oder OS in die ETCS-Betriebsart SR zu wechseln sowie an einem ETCS-Halt vorbeizufahren." },
+            { term: "Planmäßige Halte", definition: "Ein planmäßiger Halt kann:\n- als Fahrplanhalt im Fahrplan bzw. in einer Fahrplananordnung angeordnet sein oder\n- als zusätzlicher Halt angeordnet werden. Diese Anordnung darf das Eisenbahnverkehrsunternehmen erteilen." },
+            { term: "PT (Post Trip)", definition: "Betriebsart bei ETCS, in die das ETCS-Fahrzeuggerät wechselt, nachdem der Triebfahrzeugführer im Stillstand die Betriebsart TR bestätigt hat." },
+            { term: "Rangieren", definition: "Rangieren ist das Bewegen von Fahrzeugen im Bahnbetrieb, ausgenommen das Fahren der Züge. Das Bewegen von Fahrzeugen im Baugleis ist Rangieren. Beim Rangieren wird nachfolgenden Fahrzeugbewegungen unterschieden:\n- Rangierfahrt,\n- Abdrücken, Ablaufen,\n- Abstoßen,\n- Beidrücken,\n- Aufdrücken und\n- Verschieben." },
+            { term: "Rangierfahrt", definition: "Eine Rangierfahrt ist eine Fahrzeugbewegung beim Rangieren, bei der\n- einzelne arbeitende Triebfahrzeuge oder\n- eine Gruppe gekuppelter Fahrzeuge, von denen mindestens ein Fahrzeug ein arbeitendes Triebfahrzeug ist,\nbewegt werden." },
+            { term: "Regelfahrzeuge", definition: "Regelfahrzeuge werden unterschieden nach Triebfahrzeugen und Wagen." },
+            { term: "Regelgleis", definition: "Das Gleis, das auf zweigleisiger, freier Strecke in der gewöhnlichen Fahrtrichtung befahren wird, wird als Regelgleis bezeichnet." },
+            { term: "Regelhalt", definition: "Ein Regelhalt ist ein Fahrplanhalt, bei dem ein Zug auf der Betriebsstelle halten muss." },
+            { term: "Regelzüge", definition: "Regelzüge sind Züge, die nach einem im Voraus festgelegten Fahrplan täglich oder an bestimmten Tagen verkehren." },
+            { term: "Release Speed", definition: "Die Release Speed erlaubt in ETCS-Level 1 die Fahrt bis zu dem Signal mit der Balisengruppe, die der ETCS-Fahrzeugeinrichtung eine neue ETCS-Fahrterlaubnis übermittelt. In ETCS-Level 2 dient die Release Speed dem Ausgleich der Ungenauigkeiten der Wegmessung, indem sie es ermöglicht, bis zum zugehörigen Hauptsignal, Signal Ne 14, Blockkennzeichen oder Gleisabschluss vorzufahren." },
+            { term: "SB (Stand By)", definition: "Betriebsart bei ETCS, bei der die ETCS-Fahrzeugeinrichtung in Bereitschaft ist und die dem Triebfahrzeugführer durch ein Symbol in der Führerraumanzeige angezeigt wird. In der Betriebsart SB ist der Zug noch ohne ETCS-Fahrterlaubnis." },
+            { term: "SF (System Failure)", definition: "Betriebsart bei ETCS, in die die ETCS-Fahrzeugeinrichtung bei sicherheitsrelevanten Fehlern wechselt. Gleichzeitig leitet die ETCS-Fahrzeugeinrichtung eine Zwangsbremsung ein." },
+            { term: "Schneeräumfahrten", definition: "Schneeräumfahrten sind Fahrten mit arbeitenden Schneeräumern - außer Fahrten mit Schneepflügen, die mit dem Triebfahrzeug fest verbunden sind." },
+            { term: "Selbsttätige Blockstellen", definition: "Selbsttätige Blockstellen sind Blockstellen der freien Strecke, wo selbsttätiger Streckenblock eingerichtet ist, ausgenommen Abzweigstellen oder Überleitstellen." },
+            { term: "Selbststellbetrieb, Zuglenkung", definition: "Bei Selbststellbetrieb oder bei Zuglenkung mit Lenkplan werden Zugstraßen selbsttätig eingestellt." },
+            { term: "SH (Shunting)", definition: "Betriebsart bei ETCS, bei der ein Zug oder eine Rangierfahrt ohne ETCS-Fahrterlaubnis fahren kann und die ETCS dem Triebfahrzeugführer durch ein Symbol in der Führerraumanzeige anzeigt; die Fahrterlaubnis erhält der Triebfahrzeugführer durch einen Befehl bzw. beim Rangieren durch Zustimmung des Weichenwärters." },
+            { term: "Signalgeführt", definition: "Züge sind signalgeführt, wenn sie nicht anzeigegeführt sind." },
+            { term: "Sollgeschwindigkeit", definition: "Die Sollgeschwindigkeit ist die als V-soll angezeigte Geschwindigkeit für einen anzeigegeführten Zug, mit der ein Zug fahren kann, ohne dass LZB oder ETCS eine Warnung ausgibt oder eine Bremsung einleitet." },
+            { term: "Sperrfahrten", definition: "Sperrfahrten sind Züge oder Kleinwagenfahrten, die in ein Gleis der freien Strecke eingelassen werden, das gesperrt ist." },
+            { term: "SR (Staff Responsible)", definition: "Betriebsart bei ETCS, bei der ETCS die zulässige Geschwindigkeit für SR und das Ende der Fahrterlaubnis durch Balisen mit der Information „Halt für Züge in der ETCS-Betriebsart SR“ am Signal Ne 14 überwacht. ETCS zeigt dem Triebfahrzeugführer die Betriebsart SR durch ein Symbol in der Führerraumanzeige an. Die Fahrterlaubnis erhält der Triebfahrzeugführer durch einen Befehl, bei ETCS-Level 1 auch durch ein Signal oder bei ETCS-Level 2 auch durch eine Textmeldung." },
+            { term: "Strecken mit Stichstreckenblock", definition: "Strecken mit Stichstreckenblock sind eingleisige Stichstrecken, die mit Streckenblock ausgerüstet sind und nur aus einem Zugfolgeabschnitt bestehen. Dabei befinden sich alle Bedieneinrichtungen des Stichstreckenblocks auf der angrenzenden Zugmeldestelle." },
+            { term: "TR (Trip)", definition: "Betriebsart bei ETCS, in die das ETCS-Fahrzeuggerät nach Überfahren eines ETCS-Haltes oder in bestimmten Störsituationen wechselt." },
+            { term: "Triebfahrzeuge", definition: "Triebfahrzeuge sind Lokomotiven, Triebwagen, Triebköpfe und Triebzüge sowie Kleinlokomotiven." },
+            { term: "Überholen", definition: "Beim Überholen fährt ein Zug an einem anderen Zug derselben Fahrtrichtung vorbei." },
+            { term: "Überleitstellen", definition: "Überleitstellen sind Blockstellen der freien Strecke, wo Züge auf ein anderes Gleis derselben Strecke übergehen können. Eine Überleitstelle wird durch ihre Blocksignale begrenzt. Bestimmungen für Abzweigstellen gelten auch für Überleitstellen, sofern es nicht im Einzelfall anders bestimmt ist." },
+            { term: "Überwachende Zugmeldestelle", definition: "Überwachende Zugmeldestelle ist die in einer Betra bezeichnete Zugmeldestelle, ab der ein Gleis der freien Strecke während unterbrochener Arbeitszeit gesperrt werden soll." },
+            { term: "Umleiten", definition: "Beim Umleiten fährt ein Zug über eine andere als die im Fahrplan angegebene Strecke." },
+            { term: "UN (Unfitted)", definition: "Betriebsart bei ETCS, die nur im ETCS-Level 0 möglich ist. In der Betriebsart UN liest das ETCS-Fahrzeuggerät die Balisen und kann eine Verbindung zur ETCS Zentrale aufbauen. Das Fahrzeuggerät überwacht die zulässige Geschwindigkeit von 50 km/h bei nicht wirksamer Zugbeeinflussung." },
+            { term: "Verkehrliche Abfahrtszeit", definition: "Die verkehrliche Abfahrtszeit ist die für eine Betriebsstelle in den Auskunftsmedien und in den Fahrgastinformationen am Bahnsteig veröffentlichte Zeit. Die verkehrliche Abfahrtzeit ist für den Reisenden die maßgebliche Zeit." },
+            { term: "Verlassensfeststellung", definition: "Die Verlassensfeststellung umfasst die Prüfung, dass Zugfolgeabschnitte oder einzelne Gleisabschnitte von Fahrzeugen geräumt sind. Bei der Verlassensfeststellung wird das Freisein durch das Auswerten der ordnungsgemäß wirkenden Einrichtungen des Streckenblocks oder der Gleisfreimeldeanlage oder, wo diese nicht vorhanden sind, durch das Auswerten von Einträgen und Meldungen geprüft." },
+            { term: "Verschieben", definition: "Verschieben ist das Bewegen von Fahrzeugen durch Menschenkraft oder durch einen Antrieb, der nicht von einem Triebfahrzeug ausgeht." },
+            { term: "Versuchsfahrten", definition: "Versuchsfahrten sind Fahrten, die nach abweichenden Regeln verkehren. Diese sind in einer Fahrplananordnung gegeben." },
+            { term: "Virtuelle Blockstelle", definition: "Virtuelle Blockstellen gibt es auf Streckenabschnitten mit ETCS oder LZB. Sie sind eingerichtet:\n- auf Strecken mit ETCS-Level 2 ohne Hauptsignale an allen Signalen Ne 14.\n- an Blockkennzeichen.\nBei LZB sind virtuelle Blockstellen außerdem eingerichtet für Fahrten auf dem Gegengleis in Höhe des Blocksignals einer Abzweigstelle oder in Höhe des Einfahrsignals eines Bahnhofs." },
+            { term: "Wagen", definition: "Wagen werden eingeteilt in:\n- Reisezugwagen; hierzu zählen Personen-, Reisezuggepäck-, Autoreisezug und Postwagen\n- Güterwagen." },
+            { term: "Weichenwärter", definition: "Weichenwärter wirken bei der Durchführung des Rangierens mit. Sie verständigen beim Rangieren Triebfahrzeugführer, Rangierbegleiter, benachbarte Weichenwärter, Schrankenwärter oder Fahrdienstleiter. Sie stimmen beim Rangieren Fahrzeugbewegungen zu. Verständigung und Zustimmung entfallen, wenn in Ortsstellbereichen rangiert wird. Weichenwärter können an der Durchführung von Zugfahrten beteiligt sein. Fahrdienstleiter und Weichenwärter sind in den Richtlinien 408.01 - 06 und 408.48 zusammenfassend in Kurzform auch als „Bediener“ angesprochen." },
+            { term: "Wendezüge", definition: "Wendezüge sind vom Führerraum an der Spitze aus gesteuerte Züge, deren Triebfahrzeuge beim Wechsel der Fahrtrichtung den Platz im Zuge beibehalten." },
+            { term: "Zielentfernung", definition: "Die Zielentfernung ist die Entfernung zum Ort, an dem die Geschwindigkeit eines Zuges gleich oder niedriger sein muss als die vorgegebene Zielgeschwindigkeit." },
+            { term: "Zielgeschwindigkeit", definition: "Die Zielgeschwindigkeit ist die Geschwindigkeit, die am durch die Zielentfernung vorgegebenen Ort erreicht sein muss. Die Zielgeschwindigkeit 0 km/h zeigt einen zu erwartenden LZB-Halt oder ETCS-Halt an." },
+            { term: "Zufahrtsicherungssignal", definition: "Ein Zufahrtsicherungssignal ist das letzte Hauptsignal vor einer Strecke mit ETCS Level 2 ohne Hauptsignale." },
+            { term: "Züge", definition: "Züge sind auf die freie Strecke übergehende oder innerhalb eines Bahnhofs nach einem Fahrplan verkehrende einzeln fahrende Triebfahrzeuge oder Einheiten, die zusammengesetzt sein können aus arbeitenden Triebfahrzeugen oder arbeitenden Triebfahrzeugen und dem Wagenzug, in den Wagen oder nicht arbeitende Triebfahrzeuge eingestellt sind. Geeignete Nebenfahrzeuge dürfen wie Züge behandelt oder in Züge eingestellt werden. Das Eisenbahnverkehrsunternehmen gibt dem Zugpersonal bekannt, welche Nebenfahrzeuge für Züge geeignet sind. Züge werden in Reise- und Güterzüge eingeteilt." },
+            { term: "Züge des Gelegenheitsverkehrs", definition: "Züge des Gelegenheitsverkehrs sind Züge, die auf besondere Anordnung an bestimmten Tagen:\n- nach einem im Voraus festgelegten und bekannt gegebenen Fahrplan (Bedarfszüge) oder\n- nach einem von Fall zu Fall besonders aufgestellten Fahrplan verkehren." },
+            { term: "Zugfahrt mit besonderem Auftrag", definition: "Eine Zugfahrt mit besonderem Auftrag ist eine Zugfahrt, die der Fahrdienstleiter nicht durch Fahrtstellung eines Hauptsignals oder einem daraus abgeleiteten Auftrag LZB-Fahrt bzw. einer ETCS-Fahrterlaubnis in der ETCS-Betriebsart FS zulassen kann oder darf. An einer virtuellen Blockstelle entspricht der Fahrtstellung des Hauptsignals der entsprechende Fahrtmelder." },
+            { term: "Zugfolgeabschnitte", definition: "Zugfolgeabschnitte sind Gleisabschnitte der freien Strecke, in die ein Zug nur eingelassen werden darf, wenn sie frei von Fahrzeugen sind und das Gleis bis zur nächsten Zugmeldestelle nicht durch einen Zug der Gegenrichtung beansprucht wird. Es gibt Zugfolgeabschnitte für signalgeführte Züge und für anzeigegeführte Züge." },
+            { term: "Zugfolgestellen", definition: "Zugfolgestellen begrenzen Zugfolgeabschnitte und regeln die Folge der Züge auf der freien Strecke. Es gibt Zugfolgestellen für signalgeführte Züge und für anzeigegeführte Züge." },
+            { term: "Zugmeldestellen", definition: "Zugmeldestellen sind diejenigen Zugfolgestellen, die die Reihenfolge der Züge auf der freien Strecke regeln. Bahnhöfe, Abzweigstellen und Überleitstellen sind stets Zugmeldestellen." },
+            { term: "Zugpersonal", definition: "Das Zugpersonal besteht aus dem Triebfahrzeugführer und weiterem mit sonstigen betrieblichen Aufgaben im Zug betrautem Personal des Eisenbahnverkehrsunternehmens." }
+        ];
+
+        let currentSessionTerms = [];
+        let currentTermIndex = 0;
+        let score = 0;
+        let currentMode = 'learn';
+
+        const settingsView = document.getElementById('settings-view');
+        const mainView = document.getElementById('main-view');
+        const termSelectionContainer = document.getElementById('term-selection');
+        const startBtn = document.getElementById('start-btn');
+        const selectAllBtn = document.getElementById('select-all');
+        const deselectAllBtn = document.getElementById('deselect-all');
+        const warning = document.getElementById('no-selection-warning');
+        const loader = document.getElementById('loader');
+
+        window.onload = () => {
+             setTimeout(() => { // Sorgt für eine minimale Ladezeit-Anzeige
+                loader.classList.add('hidden');
+             }, 500);
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            populateTermSelection();
+        });
+
+        function populateTermSelection() {
+            definitions.sort((a, b) => a.term.localeCompare(b.term));
+            termSelectionContainer.innerHTML = '';
+            definitions.forEach((def, index) => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center p-2 bg-white rounded-md hover:bg-gray-100 transition cursor-pointer';
+                label.innerHTML = `
+                    <input type="checkbox" class="term-checkbox h-4 w-4 rounded border-gray-300 accent-[--eb-teal] focus:ring-[--eb-teal]" data-index="${index}" checked>
+                    <span class="ml-2 text-sm text-gray-700">${def.term}</span>
+                `;
+                termSelectionContainer.appendChild(label);
+            });
+        }
+        
+        selectAllBtn.addEventListener('click', () => {
+            document.querySelectorAll('.term-checkbox').forEach(cb => cb.checked = true);
+        });
+
+        deselectAllBtn.addEventListener('click', () => {
+            document.querySelectorAll('.term-checkbox').forEach(cb => cb.checked = false);
+        });
+
+        startBtn.addEventListener('click', () => {
+            const selectedCheckboxes = Array.from(document.querySelectorAll('.term-checkbox:checked'));
+            
+            if (selectedCheckboxes.length === 0) {
+                 warning.classList.remove('hidden');
+                 setTimeout(() => warning.classList.add('hidden'), 3000);
+                 return;
+            }
+
+            const selectedIndices = selectedCheckboxes.map(cb => parseInt(cb.dataset.index));
+            currentSessionTerms = selectedIndices.map(i => definitions[i]);
+            
+            currentSessionTerms.sort(() => Math.random() - 0.5);
+
+            currentMode = document.querySelector('input[name="mode"]:checked').value;
+            currentTermIndex = 0;
+            score = 0;
+
+            settingsView.classList.add('hidden');
+            mainView.classList.remove('hidden');
+            
+            loadView();
+        });
+        
+        function loadView() {
+            if (currentTermIndex >= currentSessionTerms.length) {
+                showEndScreen();
+                return;
+            }
+            mainView.innerHTML = '';
+            switch (currentMode) {
+                case 'learn':
+                    showLearnView();
+                    break;
+                case 'test-term':
+                    showTestTermView();
+                    break;
+                case 'test-def':
+                    showTestDefView();
+                    break;
+            }
+        }
+
+        function createNavigation(isTest = false, showCheck = false) {
+             const progressText = `${isTest ? 'Frage' : 'Karte'} ${currentTermIndex + 1} von ${currentSessionTerms.length}`;
+             const scoreText = isTest ? ` | Punkte: ${score}` : '';
+             let buttonsHTML = `<button id="prev-btn" class="bg-gray-200 hover:bg-gray-300 text-[--eb-medium-blue] font-bold py-2 px-6 rounded-lg transition ${currentTermIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentTermIndex === 0 ? 'disabled' : ''}>Zurück</button>`;
+             if (showCheck) {
+                 buttonsHTML += `<button id="check-btn" class="bg-[--eb-medium-blue] hover:bg-[--eb-dark-blue] text-white font-bold py-2 px-6 rounded-lg transition">Prüfen</button>`;
+             }
+             buttonsHTML += `<button id="next-btn" class="bg-[--eb-teal] hover:bg-[#358f8f] text-white font-bold py-2 px-6 rounded-lg transition">${currentTermIndex === currentSessionTerms.length - 1 ? 'Beenden' : 'Weiter'}</button>`;
+            return `
+                <div class="w-full max-w-4xl mt-6 text-center">
+                   <p class="text-gray-500 mb-4">${progressText}${scoreText}</p>
+                   <div class="flex justify-center gap-4">
+                      ${buttonsHTML}
+                   </div>
+                </div>
+                <button id="back-to-settings" class="mt-8 text-[--eb-dark-blue] hover:text-[--eb-teal] hover:underline">&larr; Zurück zur Auswahl</button>
+            `;
+        }
+
+        function attachNavListeners(isTest=false) {
+            document.getElementById('back-to-settings').addEventListener('click', backToSettings);
+            const prevBtn = document.getElementById('prev-btn');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    if (currentTermIndex > 0) {
+                        currentTermIndex--;
+                        loadView();
+                    }
+                });
+            }
+            const nextBtn = document.getElementById('next-btn');
+            if (nextBtn && !isTest) {
+                 nextBtn.addEventListener('click', () => {
+                    currentTermIndex++;
+                    loadView();
+                });
+            }
+        }
+        
+        function backToSettings() {
+             mainView.classList.add('hidden');
+             settingsView.classList.remove('hidden');
+             mainView.innerHTML = '';
+        }
+
+        function showLearnView() {
+            const item = currentSessionTerms[currentTermIndex];
+            mainView.innerHTML = `
+                <div class="w-full max-w-2xl h-96 card-container">
+                    <div class="relative w-full h-full card">
+                        <div class="card-face card-face-front">
+                            <div class="card-header w-full bg-[--eb-dark-blue]">Begriff</div>
+                            <div class="card-content flex-grow flex items-center justify-center">
+                                 <h2 class="text-3xl font-bold text-center text-[--eb-medium-blue] p-4">${item.term}</h2>
+                            </div>
+                        </div>
+                        <div class="card-face card-face-back">
+                            <div class="card-header w-full bg-[--eb-teal]">Definition</div>
+                             <div class="card-content">
+                                <p class="text-gray-700 text-left whitespace-pre-wrap">${item.definition}</p>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+                ${createNavigation()}
+            `;
+            const card = mainView.querySelector('.card');
+            card.addEventListener('click', () => card.classList.toggle('is-flipped'));
+            attachNavListeners();
+        }
+        
+        function normalizeText(text) {
+             return text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").replace(/\s{2,}/g," ").trim();
+        }
+
+        function showTestTermView() {
+            const item = currentSessionTerms[currentTermIndex];
+            mainView.innerHTML = `
+                <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                    <p class="text-gray-500 mb-2">Definieren Sie den folgenden Begriff:</p>
+                    <h2 class="text-3xl font-bold mb-6 text-[--eb-dark-blue]">${item.term}</h2>
+                    <textarea id="answer-input" class="w-full h-48 p-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-[--eb-teal] focus:border-[--eb-teal]" placeholder="Ihre Definition..."></textarea>
+                    <div id="feedback" class="mt-4 p-4 rounded-lg hidden whitespace-pre-wrap"></div>
+                </div>
+                ${createNavigation(true, true)}
+            `;
+            attachNavListeners(true);
+            
+            document.getElementById('check-btn').addEventListener('click', () => {
+                const userAnswer = document.getElementById('answer-input').value;
+                const feedbackEl = document.getElementById('feedback');
+                const cleanUserAnswer = normalizeText(userAnswer);
+                const cleanCorrectAnswer = normalizeText(item.definition);
+
+                const diff = Diff.diffWords(cleanCorrectAnswer, cleanUserAnswer, { ignoreCase: true });
+                let changes = 0;
+                diff.forEach(part => {
+                    if(part.added || part.removed) changes += part.count;
+                });
+                
+                const totalWords = cleanCorrectAnswer.split(' ').length;
+                const errorPercentage = totalWords > 0 ? (changes / totalWords) * 100 : (changes > 0 ? 100 : 0);
+                
+                feedbackEl.classList.remove('hidden');
+                
+                if (errorPercentage < 15) {
+                    feedbackEl.innerHTML = `<h4 class="font-bold mb-2">Sehr gut, das ist richtig!</h4>`;
+                    feedbackEl.className = 'mt-4 p-4 rounded-lg correct-answer whitespace-pre-wrap';
+                    score++;
+                } else {
+                    feedbackEl.innerHTML = `<h4 class="font-bold mb-2">Nicht ganz richtig. Hier ist der Vergleich:</h4>
+                    <p class="mt-2 text-sm"><ins style="background-color: #C4F2EE; color: #2B3959; text-decoration: none; padding: 0 2px; border-radius: 3px;">Hinzugefügt</ins> | <del style="background-color: #fecaca; padding: 0 2px; border-radius: 3px;">Entfernt</del></p>`;
+                    const diffResult = document.createElement('div');
+                    diff.forEach(part => {
+                        const span = document.createElement(part.added ? 'ins' : part.removed ? 'del' : 'span');
+                        span.appendChild(document.createTextNode(part.value));
+                        diffResult.appendChild(span);
+                    });
+                    feedbackEl.appendChild(diffResult);
+                    feedbackEl.className = 'mt-4 p-4 rounded-lg wrong-answer whitespace-pre-wrap';
+                }
+
+                document.getElementById('check-btn').classList.add('hidden');
+                document.getElementById('answer-input').disabled = true;
+
+                document.getElementById('next-btn').addEventListener('click', () => {
+                    currentTermIndex++;
+                    loadView();
+                });
+            });
+        }
+
+        function showTestDefView() {
+            const item = currentSessionTerms[currentTermIndex];
+            const wrongAnswers = definitions.filter(d => d.term !== item.term).sort(() => 0.5 - Math.random()).slice(0, 3).map(d => d.term);
+            const options = [item.term, ...wrongAnswers].sort(() => 0.5 - Math.random());
+            let optionsHTML = '';
+            options.forEach(option => {
+                optionsHTML += `<button class="answer-option w-full text-left p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition border-2 border-transparent">${option}</button>`;
+            });
+
+            mainView.innerHTML = `
+                 <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                    <p class="text-gray-500 mb-2">Welcher Begriff wird hier definiert?</p>
+                    <p class="text-lg mb-6 text-[--eb-dark-blue] whitespace-pre-wrap">${item.definition}</p>
+                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${optionsHTML}
+                    </div>
+                    <div id="feedback" class="mt-4 p-4 rounded-lg hidden"></div>
+                </div>
+                ${createNavigation(true)}
+            `;
+
+            attachNavListeners(true);
+            const optionsContainer = document.getElementById('options-container');
+
+            optionsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('answer-option')) {
+                    const userAnswer = e.target.textContent;
+                    const feedbackEl = document.getElementById('feedback');
+                    feedbackEl.classList.remove('hidden');
+
+                    optionsContainer.querySelectorAll('.answer-option').forEach(btn => {
+                        btn.disabled = true;
+                        if (btn.textContent === item.term) btn.classList.add('correct-answer');
+                    });
+
+                    if (userAnswer === item.term) {
+                        feedbackEl.textContent = 'Richtig!';
+                        feedbackEl.className = 'mt-4 p-4 rounded-lg correct-answer';
+                        score++;
+                    } else {
+                        e.target.classList.add('wrong-answer');
+                        feedbackEl.innerHTML = `Falsch. Die richtige Antwort ist markiert.`;
+                        feedbackEl.className = 'mt-4 p-4 rounded-lg wrong-answer';
+                    }
+                    
+                    document.getElementById('next-btn').addEventListener('click', () => {
+                        currentTermIndex++;
+                        loadView();
+                    });
+                }
+            });
+        }
+
+        function showEndScreen() {
+            let message = '';
+            if (currentMode.startsWith('test')) {
+                const percentage = currentSessionTerms.length > 0 ? Math.round((score / currentSessionTerms.length) * 100) : 0;
+                message = `
+                    <h2 class="text-3xl font-bold mb-4">Test beendet!</h2>
+                    <p class="text-xl">Du hast ${score} von ${currentSessionTerms.length} Begriffen richtig beantwortet.</p>
+                    <p class="text-5xl font-bold mt-4 text-[--eb-teal]">${percentage}%</p>
+                `;
+            } else {
+                message = `<h2 class="text-3xl font-bold mb-4">Lernsitzung beendet!</h2><p class="text-xl">Du hast alle ausgewählten Karteikarten durchgesehen.</p>`;
+            }
+
+            mainView.innerHTML = `
+                <div class="text-center bg-white p-10 rounded-xl shadow-lg border border-gray-200">
+                    ${message}
+                    <div class="mt-8">
+                        <button id="restart-btn" class="bg-[--eb-teal] hover:bg-[#358f8f] text-white font-bold py-3 px-6 rounded-lg transition">Neue Sitzung starten</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('restart-btn').addEventListener('click', backToSettings);
+        }
+    </script>
+</body>
+</html>
