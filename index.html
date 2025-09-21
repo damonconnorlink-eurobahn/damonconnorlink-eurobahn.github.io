@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lernplattform Fahrdienstvorschrift | eurobahn</title>
+    <title>Lernplattform Begriffsdefinitionen - Ril 408.2101A01</title>
     
     <!-- Web App Manifest -->
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Lernplattform%20Ril%20408%22%2C%22short_name%22%3A%22Ril%20408%20Lernen%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F2F2F2%22%2C%22theme_color%22%3A%22%23273A73%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fwww.eurobahn.de%2Ffileadmin%2Fbilder%2Flogos%2Flogo-eurobahn.svg%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
@@ -100,11 +100,18 @@
             font-weight: 700;
             color: white;
             border-radius: 0.75rem 0.75rem 0 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
         }
         .card-content {
             padding: 1.5rem;
             overflow-y: auto;
             flex-grow: 1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            word-break: break-word;
         }
         .correct-answer {
             background-color: #C4F2EE !important;
@@ -128,12 +135,29 @@
             padding: 0 2px;
             border-radius: 3px;
         }
+        
+        /* Text overflow handling for card content */
+        .card-content h2 {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            word-break: break-word;
+        }
+        
+        /* Ensure all text elements in cards handle overflow properly */
+        .card-content p,
+        .card-content div,
+        .card-content span {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
     </style>
 </head>
 <body class="antialiased">
     <!-- Ladebildschirm -->
     <div id="loader" class="loader">
-        <img src="https://www.eurobahn.de/fileadmin/bilder/logos/logo-eurobahn.svg" alt="Eurobahn Logo" class="h-20">
+        <img src="https://www.eurobahn.de/fileadmin/bilder/logos/logo-eurobahn.svg" alt="Eurobahn" class="h-20">
     </div>
 
     <div class="container mx-auto p-4 md:p-8 min-h-screen flex flex-col">
@@ -600,4 +624,5 @@
         }
     </script>
 </body>
+
 </html>
