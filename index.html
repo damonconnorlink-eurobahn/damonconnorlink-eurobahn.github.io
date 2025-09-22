@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lernplattform Begriffsdefinitionen - Ril 408.2101A01</title>
     
-    <!-- Web App Manifest -->
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Lernplattform%20Ril%20408%22%2C%22short_name%22%3A%22Ril%20408%20Lernen%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F2F2F2%22%2C%22theme_color%22%3A%22%23273A73%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fwww.eurobahn.de%2Ffileadmin%2Fbilder%2Flogos%2Flogo-eurobahn.svg%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
 
-    <!-- iOS Web App Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Ril 408 Lernen">
@@ -17,7 +15,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- jsdiff Library for text comparison -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.1.0/diff.min.js"></script>
     <style>
         body {
@@ -46,18 +43,32 @@
             align-items: center;
             background-color: var(--eb-off-white);
             z-index: 9999;
-            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+            text-align: center;
         }
-        .loader img {
-            animation: pulse 1.5s infinite ease-in-out;
+        .loader.fade-out {
+            opacity: 0;
         }
         .loader.hidden {
-            opacity: 0;
+            display: none;
             visibility: hidden;
+        }
+        .loader .header-content {
+            animation: pulse 1.5s infinite ease-in-out;
         }
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        /* Hauptinhalt, der zuerst versteckt ist */
+        .main-content {
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+        .main-content.visible {
+            opacity: 1;
         }
         
         /* Karten-Design */
@@ -213,7 +224,7 @@
 </head>
 <body class="antialiased">
     <div id="loader" class="loader">
-        <header class="text-center mb-8 border-b-2 border-gray-200 pb-4 flex flex-col sm:flex-row justify-center items-center gap-4">
+        <header class="p-4 sm:p-8 flex flex-col sm:flex-row justify-center items-center gap-4">
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/23/BSicon_BAHN.svg" alt="Eisenbahn" class="h-12 md:h-16">
             <div class="text-center sm:text-left">
                 <h1 class="text-3xl md:text-4xl font-bold text-[--eb-dark-blue] tracking-wide">Lernplattform</h1>
@@ -221,17 +232,9 @@
             </div>
         </header>
     </div>
-    
-    <div class="container mx-auto p-4 md:p-8 min-h-screen flex flex-col">
-        <header class="text-center mb-8 border-b-2 border-gray-200 pb-4 flex flex-col sm:flex-row justify-center items-center gap-4">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/23/BSicon_BAHN.svg" alt="Eisenbahn" class="h-12 md:h-16">
-            <div class="text-center sm:text-left">
-                <h1 class="text-3xl md:text-4xl font-bold text-[--eb-dark-blue] tracking-wide">Lernplattform</h1>
-                <p class="text-lg text-gray-500">Begriffsdefinitionen Ril 408.2101A01</p>
-            </div>
-        </header>
 
-        <!-- Lernfortschritt Dashboard -->
+    <div class="container mx-auto p-4 md:p-8 min-h-screen flex flex-col main-content">
+
         <div id="progress-dashboard" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-6 w-full max-w-5xl mx-auto">
             <h2 class="text-xl font-semibold mb-4 text-[--eb-dark-blue]">Lernfortschritt</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -253,7 +256,6 @@
                 </div>
             </div>
             
-            <!-- Filterbuttons -->
             <div class="flex flex-wrap gap-2 mb-4">
                 <button id="filter-all" class="px-4 py-2 bg-[--eb-dark-blue] text-white rounded-lg hover:bg-[--eb-medium-blue] transition">Alle anzeigen</button>
                 <button id="filter-unknown" class="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition">Nur nicht gewusste</button>
@@ -262,7 +264,6 @@
                 <button id="reset-progress" class="px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg transition ml-auto">Fortschritt zurücksetzen</button>
             </div>
             
-            <!-- Fortschrittsbalken -->
             <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
                 <div id="progress-bar" class="bg-[--eb-teal] h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
@@ -293,7 +294,6 @@
                 <div>
                     <h2 class="text-2xl font-semibold mb-4 text-[--eb-dark-blue]">2. Begriffe auswählen</h2>
                     
-                    <!-- Suchfeld -->
                     <div class="mb-4">
                         <div class="relative">
                             <input type="text" id="search-input" placeholder="Begriffe durchsuchen..." 
@@ -381,8 +381,7 @@
             { term: "Haltepunkte", definition: "Haltepunkte sind Bahnanlagen ohne Weichen, wo Züge planmäßig halten, beginnen oder enden dürfen." },
             { term: "Haltestellen", definition: "Haltestellen sind Abzweigstellen, Überleitstellen oder Anschlussstellen, die mit einem Haltepunkt örtlich verbunden sind." },
             { term: "Hauptgleise", definition: "Hauptgleise sind die von Zügen planmäßig befahrenen Gleise." },
-            { term: "IS (Isolation)", definition: "Betriebsart bei ETCS, wenn das ETCS-Fahrzeuggerät mit dem Störschalter ausgeschaltet ist. Es sind keine Eingaben und Anzeigen über die Fahrzeugeinrichtung möglich. Der Zug kann ohne ETCS-Fahrterlaubnis fahren." },
-            { term: "Kleinwagen", definition: "Kleinwagen sind Nebenfahrzeuge, die Gleisschaltmittel oder Gleisfreimeldeanlagen nicht zuverlässig beeinflussen." },
+            { term: "IS (Isolation)", definition: "Betriebsart bei ETCS, wenn das ETCS-Fahrzeuggerät mit dem Störschalter ausgeschaltet ist. Es sind keine Eingaben und Anzeigen über die Fahrzeugeinrichtung möglich. Der Zug kann ohne ETCS-Fahrterlaubnis fahren." }, { term: "Kleinwagen", definition: "Kleinwagen sind Nebenfahrzeuge, die Gleisschaltmittel oder Gleisfreimeldeanlagen nicht zuverlässig beeinflussen." },
             { term: "Kleinwagenfahrten", definition: "Kleinwagenfahrten sind Fahrten, die aus Kleinwagen gebildet sind oder in die Kleinwagen eingestellt sind. Sie dürfen nur als Sperrfahrt oder Rangierfahrt verkehren. Kleinwagenfahrten als Sperrfahrten sind nach den Regeln für Zugfahrten unter Beachtung der für Kleinwagenfahrten geltenden Besonderheiten durchzuführen. Kleinwagenfahrten als Rangierfahrten sind nach den Regeln für das Rangieren unter Beachtung der für Kleinwagen geltenden Besonderheiten durchzuführen." },
             { term: "Kontaktstelle", definition: "Kontaktstelle ist:\na) die Zugmeldestelle, die während der Arbeitsunterbrechung der überwachenden Zugmeldestelle bei der Notfallleitstelle für ein der überwachenden Zugmeldestelle zugeordnetes, gesperrtes Gleis Hilfe aufrufen muss,\nb) die Betriebsstelle, die die Meldungen zu Arbeitsende und Arbeitsbeginn bei unterbrochener Arbeitszeit entgegennimmt und der Besonderheiten während der unterbrochenen Arbeitszeit gemeldet werden." },
             { term: "Kreuzen", definition: "Beim Kreuzen wartet ein Zug auf einer Zugmeldestelle, weil der Zugfolgeabschnitt, in den er eingelassen werden soll, noch durch einen in der Gegenrichtung fahrenden Zug beansprucht wird." },
@@ -397,927 +396,293 @@
             { term: "OS (On Sight)", definition: "Betriebsart bei ETCS, bei der ein Zug auf Sicht fahren muss, und zwar mit einer ETCS-Fahrterlaubnis, die dem Triebfahrzeugführer mit einem Symbol in der Führerraumanzeige angezeigt wird. ETCS überwacht die maximal zulässige Geschwindigkeit für Fahren auf Sicht und das Ende der ETCS-Fahrterlaubnis." },
             { term: "Override EOA", definition: "Funktion im ETCS-Fahrzeuggerät, die es dem Triebfahrzeugführer ermöglicht, aus den ETCS-Betriebsarten FS oder OS in die ETCS-Betriebsart SR zu wechseln sowie an einem ETCS-Halt vorbeizufahren." },
             { term: "Planmäßige Halte", definition: "Ein planmäßiger Halt kann:\n- als Fahrplanhalt im Fahrplan bzw. in einer Fahrplananordnung angeordnet sein oder\n- als zusätzlicher Halt angeordnet werden. Diese Anordnung darf das Eisenbahnverkehrsunternehmen erteilen." },
-            { term: "PT (Post Trip)", definition: "Betriebsart bei ETCS, in die das ETCS-Fahrzeuggerät wechselt, nachdem der Triebfahrzeugführer im Stillstand die Betriebsart TR bestätigt hat." },
-            { term: "Rangieren", definition: "Rangieren ist das Bewegen von Fahrzeugen im Bahnbetrieb, ausgenommen das Fahren der Züge. Das Bewegen von Fahrzeugen im Baugleis ist Rangieren. Beim Rangieren wird nachfolgenden Fahrzeugbewegungen unterschieden:\n- Rangierfahrt,\n- Abdrücken, Ablaufen,\n- Abstoßen,\n- Beidrücken,\n- Aufdrücken und\n- Verschieben." },
-            { term: "Rangierfahrt", definition: "Eine Rangierfahrt ist eine Fahrzeugbewegung beim Rangieren, bei der\n- einzelne arbeitende Triebfahrzeuge oder\n- eine Gruppe gekuppelter Fahrzeuge, von denen mindestens ein Fahrzeug ein arbeitendes Triebfahrzeug ist,\nbewegt werden." },
-            { term: "Regelfahrzeuge", definition: "Regelfahrzeuge werden unterschieden nach Triebfahrzeugen und Wagen." },
-            { term: "Regelgleis", definition: "Das Gleis, das auf zweigleisiger, freier Strecke in der gewöhnlichen Fahrtrichtung befahren wird, wird als Regelgleis bezeichnet." },
-            { term: "Regelhalt", definition: "Ein Regelhalt ist ein Fahrplanhalt, bei dem ein Zug auf der Betriebsstelle halten muss." },
-            { term: "Regelzüge", definition: "Regelzüge sind Züge, die nach einem im Voraus festgelegten Fahrplan täglich oder an bestimmten Tagen verkehren." },
-            { term: "Release Speed", definition: "Die Release Speed erlaubt in ETCS-Level 1 die Fahrt bis zu dem Signal mit der Balisengruppe, die der ETCS-Fahrzeugeinrichtung eine neue ETCS-Fahrterlaubnis übermittelt. In ETCS-Level 2 dient die Release Speed dem Ausgleich der Ungenauigkeiten der Wegmessung, indem sie es ermöglicht, bis zum zugehörigen Hauptsignal, Signal Ne 14, Blockkennzeichen oder Gleisabschluss vorzufahren." },
-            { term: "SB (Stand By)", definition: "Betriebsart bei ETCS, bei der die ETCS-Fahrzeugeinrichtung in Bereitschaft ist und die dem Triebfahrzeugführer durch ein Symbol in der Führerraumanzeige angezeigt wird. In der Betriebsart SB ist der Zug noch ohne ETCS-Fahrterlaubnis." },
-            { term: "SF (System Failure)", definition: "Betriebsart bei ETCS, in die die ETCS-Fahrzeugeinrichtung bei sicherheitsrelevanten Fehlern wechselt. Gleichzeitig leitet die ETCS-Fahrzeugeinrichtung eine Zwangsbremsung ein." },
-            { term: "Schneeräumfahrten", definition: "Schneeräumfahrten sind Fahrten mit arbeitenden Schneeräumern - außer Fahrten mit Schneepflügen, die mit dem Triebfahrzeug fest verbunden sind." },
-            { term: "Selbsttätige Blockstellen", definition: "Selbsttätige Blockstellen sind Blockstellen der freien Strecke, wo selbsttätiger Streckenblock eingerichtet ist, ausgenommen Abzweigstellen oder Überleitstellen." },
-            { term: "Selbststellbetrieb, Zuglenkung", definition: "Bei Selbststellbetrieb oder bei Zuglenkung mit Lenkplan werden Zugstraßen selbsttätig eingestellt." },
-            { term: "SH (Shunting)", definition: "Betriebsart bei ETCS, bei der ein Zug oder eine Rangierfahrt ohne ETCS-Fahrterlaubnis fahren kann und die ETCS dem Triebfahrzeugführer durch ein Symbol in der Führerraumanzeige anzeigt; die Fahrterlaubnis erhält der Triebfahrzeugführer durch einen Befehl bzw. beim Rangieren durch Zustimmung des Weichenwärters." },
-            { term: "Signalgeführt", definition: "Züge sind signalgeführt, wenn sie nicht anzeigegeführt sind." },
-            { term: "Sollgeschwindigkeit", definition: "Die Sollgeschwindigkeit ist die als V-soll angezeigte Geschwindigkeit für einen anzeigegeführten Zug, mit der ein Zug fahren kann, ohne dass LZB oder ETCS eine Warnung ausgibt oder eine Bremsung einleitet." },
-            { term: "Sperrfahrten", definition: "Sperrfahrten sind Züge oder Kleinwagenfahrten, die in ein Gleis der freien Strecke eingelassen werden, das gesperrt ist." },
-            { term: "SR (Staff Responsible)", definition: "Betriebsart bei ETCS, bei der ETCS die zulässige Geschwindigkeit für SR und das Ende der Fahrterlaubnis durch Balisen mit der Information „Halt für Züge in der ETCS-Betriebsart SR“ am Signal Ne 14 überwacht. ETCS zeigt dem Triebfahrzeugführer die Betriebsart SR durch ein Symbol in der Führerraumanzeige an. Die Fahrterlaubnis erhält der Triebfahrzeugführer durch einen Befehl, bei ETCS-Level 1 auch durch ein Signal oder bei ETCS-Level 2 auch durch eine Textmeldung." },
-            { term: "Strecken mit Stichstreckenblock", definition: "Strecken mit Stichstreckenblock sind eingleisige Stichstrecken, die mit Streckenblock ausgerüstet sind und nur aus einem Zugfolgeabschnitt bestehen. Dabei befinden sich alle Bedieneinrichtungen des Stichstreckenblocks auf der angrenzenden Zugmeldestelle." },
-            { term: "TR (Trip)", definition: "Betriebsart bei ETCS, in die das ETCS-Fahrzeuggerät nach Überfahren eines ETCS-Haltes oder in bestimmten Störsituationen wechselt." },
-            { term: "Triebfahrzeuge", definition: "Triebfahrzeuge sind Lokomotiven, Triebwagen, Triebköpfe und Triebzüge sowie Kleinlokomotiven." },
-            { term: "Überholen", definition: "Beim Überholen fährt ein Zug an einem anderen Zug derselben Fahrtrichtung vorbei." },
-            { term: "Überleitstellen", definition: "Überleitstellen sind Blockstellen der freien Strecke, wo Züge auf ein anderes Gleis derselben Strecke übergehen können. Eine Überleitstelle wird durch ihre Blocksignale begrenzt. Bestimmungen für Abzweigstellen gelten auch für Überleitstellen, sofern es nicht im Einzelfall anders bestimmt ist." },
-            { term: "Überwachende Zugmeldestelle", definition: "Überwachende Zugmeldestelle ist die in einer Betra bezeichnete Zugmeldestelle, ab der ein Gleis der freien Strecke während unterbrochener Arbeitszeit gesperrt werden soll." },
-            { term: "Umleiten", definition: "Beim Umleiten fährt ein Zug über eine andere als die im Fahrplan angegebene Strecke." },
-            { term: "UN (Unfitted)", definition: "Betriebsart bei ETCS, die nur im ETCS-Level 0 möglich ist. In der Betriebsart UN liest das ETCS-Fahrzeuggerät die Balisen und kann eine Verbindung zur ETCS Zentrale aufbauen. Das Fahrzeuggerät überwacht die zulässige Geschwindigkeit von 50 km/h bei nicht wirksamer Zugbeeinflussung." },
-            { term: "Verkehrliche Abfahrtszeit", definition: "Die verkehrliche Abfahrtszeit ist die für eine Betriebsstelle in den Auskunftsmedien und in den Fahrgastinformationen am Bahnsteig veröffentlichte Zeit. Die verkehrliche Abfahrtzeit ist für den Reisenden die maßgebliche Zeit." },
-            { term: "Verlassensfeststellung", definition: "Die Verlassensfeststellung umfasst die Prüfung, dass Zugfolgeabschnitte oder einzelne Gleisabschnitte von Fahrzeugen geräumt sind. Bei der Verlassensfeststellung wird das Freisein durch das Auswerten der ordnungsgemäß wirkenden Einrichtungen des Streckenblocks oder der Gleisfreimeldeanlage oder, wo diese nicht vorhanden sind, durch das Auswerten von Einträgen und Meldungen geprüft." },
-            { term: "Verschieben", definition: "Verschieben ist das Bewegen von Fahrzeugen durch Menschenkraft oder durch einen Antrieb, der nicht von einem Triebfahrzeug ausgeht." },
-            { term: "Versuchsfahrten", definition: "Versuchsfahrten sind Fahrten, die nach abweichenden Regeln verkehren. Diese sind in einer Fahrplananordnung gegeben." },
-            { term: "Virtuelle Blockstelle", definition: "Virtuelle Blockstellen gibt es auf Streckenabschnitten mit ETCS oder LZB. Sie sind eingerichtet:\n- auf Strecken mit ETCS-Level 2 ohne Hauptsignale an allen Signalen Ne 14.\n- an Blockkennzeichen.\nBei LZB sind virtuelle Blockstellen außerdem eingerichtet für Fahrten auf dem Gegengleis in Höhe des Blocksignals einer Abzweigstelle oder in Höhe des Einfahrsignals eines Bahnhofs." },
-            { term: "Wagen", definition: "Wagen werden eingeteilt in:\n- Reisezugwagen; hierzu zählen Personen-, Reisezuggepäck-, Autoreisezug und Postwagen\n- Güterwagen." },
-            { term: "Weichenwärter", definition: "Weichenwärter wirken bei der Durchführung des Rangierens mit. Sie verständigen beim Rangieren Triebfahrzeugführer, Rangierbegleiter, benachbarte Weichenwärter, Schrankenwärter oder Fahrdienstleiter. Sie stimmen beim Rangieren Fahrzeugbewegungen zu. Verständigung und Zustimmung entfallen, wenn in Ortsstellbereichen rangiert wird. Weichenwärter können an der Durchführung von Zugfahrten beteiligt sein. Fahrdienstleiter und Weichenwärter sind in den Richtlinien 408.01 - 06 und 408.48 zusammenfassend in Kurzform auch als „Bediener“ angesprochen." },
-            { term: "Wendezüge", definition: "Wendezüge sind vom Führerraum an der Spitze aus gesteuerte Züge, deren Triebfahrzeuge beim Wechsel der Fahrtrichtung den Platz im Zuge beibehalten." },
-            { term: "Zielentfernung", definition: "Die Zielentfernung ist die Entfernung zum Ort, an dem die Geschwindigkeit eines Zuges gleich oder niedriger sein muss als die vorgegebene Zielgeschwindigkeit." },
-            { term: "Zielgeschwindigkeit", definition: "Die Zielgeschwindigkeit ist die Geschwindigkeit, die am durch die Zielentfernung vorgegebenen Ort erreicht sein muss. Die Zielgeschwindigkeit 0 km/h zeigt einen zu erwartenden LZB-Halt oder ETCS-Halt an." },
-            { term: "Zufahrtsicherungssignal", definition: "Ein Zufahrtsicherungssignal ist das letzte Hauptsignal vor einer Strecke mit ETCS Level 2 ohne Hauptsignale." },
-            { term: "Züge", definition: "Züge sind auf die freie Strecke übergehende oder innerhalb eines Bahnhofs nach einem Fahrplan verkehrende einzeln fahrende Triebfahrzeuge oder Einheiten, die zusammengesetzt sein können aus arbeitenden Triebfahrzeugen oder arbeitenden Triebfahrzeugen und dem Wagenzug, in den Wagen oder nicht arbeitende Triebfahrzeuge eingestellt sind. Geeignete Nebenfahrzeuge dürfen wie Züge behandelt oder in Züge eingestellt werden. Das Eisenbahnverkehrsunternehmen gibt dem Zugpersonal bekannt, welche Nebenfahrzeuge für Züge geeignet sind. Züge werden in Reise- und Güterzüge eingeteilt." },
-            { term: "Züge des Gelegenheitsverkehrs", definition: "Züge des Gelegenheitsverkehrs sind Züge, die auf besondere Anordnung an bestimmten Tagen:\n- nach einem im Voraus festgelegten und bekannt gegebenen Fahrplan (Bedarfszüge) oder\n- nach einem von Fall zu Fall besonders aufgestellten Fahrplan verkehren." },
-            { term: "Zugfahrt mit besonderem Auftrag", definition: "Eine Zugfahrt mit besonderem Auftrag ist eine Zugfahrt, die der Fahrdienstleiter nicht durch Fahrtstellung eines Hauptsignals oder einem daraus abgeleiteten Auftrag LZB-Fahrt bzw. einer ETCS-Fahrterlaubnis in der ETCS-Betriebsart FS zulassen kann oder darf. An einer virtuellen Blockstelle entspricht der Fahrtstellung des Hauptsignals der entsprechende Fahrtmelder." },
-            { term: "Zugfolgeabschnitte", definition: "Zugfolgeabschnitte sind Gleisabschnitte der freien Strecke, in die ein Zug nur eingelassen werden darf, wenn sie frei von Fahrzeugen sind und das Gleis bis zur nächsten Zugmeldestelle nicht durch einen Zug der Gegenrichtung beansprucht wird. Es gibt Zugfolgeabschnitte für signalgeführte Züge und für anzeigegeführte Züge." },
-            { term: "Zugfolgestellen", definition: "Zugfolgestellen begrenzen Zugfolgeabschnitte und regeln die Folge der Züge auf der freien Strecke. Es gibt Zugfolgestellen für signalgeführte Züge und für anzeigegeführte Züge." },
-            { term: "Zugmeldestellen", definition: "Zugmeldestellen sind diejenigen Zugfolgestellen, die die Reihenfolge der Züge auf der freien Strecke regeln. Bahnhöfe, Abzweigstellen und Überleitstellen sind stets Zugmeldestellen." },
-            { term: "Zugpersonal", definition: "Das Zugpersonal besteht aus dem Triebfahrzeugführer und weiterem mit sonstigen betrieblichen Aufgaben im Zug betrautem Personal des Eisenbahnverkehrsunternehmens." }
+            { term: "PT (Post Trip)", definition: "Betriebsart bei ETCS, in die ein Zug wechselt, wenn er an einem ETCS-Halt vorbeifährt." },
+            { term: "Rangieren", definition: "Rangieren ist das Bewegen von Fahrzeugen im Bahnbetrieb, ausgenommen das Fahren der Züge. Fahrten im Bahnhof, die nicht als Zugfahrt durchgeführt werden, sind Rangierfahrten." },
+            { term: "Regelfahrzeuge", definition: "Regelfahrzeuge sind Schienenfahrzeuge, die den Bau- und Unterhaltungsvorschriften für Regelfahrzeuge entsprechen." },
+            { term: "Regelhalt", definition: "Ein Regelhalt ist ein Fahrplanhalt, bei dem ein Zug auf der Betriebsstelle halten muss. Ein Regelhalt darf in einen Betriebshalt umgewandelt werden, wenn der Halt ausfallen darf." },
+            { term: "RL (Reisezuglokomotive)", definition: "RL ist eine Betriebsart bei ETCS für eine Reisezuglokomotive, die ETCS-Funktionen bietet und nicht mit einem Zug gekuppelt ist oder am Schluss eines Zuges läuft." },
+            { term: "Rückdrücken", definition: "Rückdrücken ist das Bewegen von Fahrzeugen zum Zwecke des Aufdrückens, Abstoßens oder Ablaufenlassens." },
+            { term: "RZ (Reisezug)", definition: "RZ ist eine Betriebsart bei ETCS für ein Triebfahrzeug mit ETCS-Funktionen im Stand. Das Triebfahrzeug ist am Schluss eines Reisezuges oder mit einem solchen gekuppelt." },
+            { term: "SB (Stand By)", definition: "Betriebsart bei ETCS, wenn das ETCS-Fahrzeuggerät eingeschaltet ist und ein Zug mit eingeschaltetem ETCS-Fahrzeuggerät abgestellt ist." },
+            { term: "SB (Shunting)", definition: "Betriebsart bei ETCS, wenn Rangierfahrten durchgeführt werden." },
+            { term: "S-Bahn", definition: "Eine S-Bahn ist ein Zug, der im Fahrplan für Zugmeldestellen und Streckenfahrplan durch den Zusatz „S“ hinter der Zugnummer gekennzeichnet ist." },
+            { term: "Signalgeführt", definition: "Ein Zug ist signalgeführt, wenn seine Fahrt durch Hauptsignale und ihre Vorsignale zugelassen wird. Ein Zug kann auch signalgeführt sein, wenn für ihn im Führerraum die zugelassene Höchstgeschwindigkeit, eine Zielgeschwindigkeit und eine Zielentfernung überwacht wird (z. B. LZB-Führung in ETCS-Betriebsart NTC)." },
+            { term: "Sperrfahrten", definition: "Sperrfahrten sind Züge, die auf Strecken oder Gleisen mit Sperrung verkehren." },
+            { term: "Sperrung", definition: "Eine Sperrung ist eine auf Zeit und Raum begrenzte Anordnung, die es Zügen, Kleinwagenfahrten oder Rangierfahrten nicht erlaubt, einen Gleisabschnitt zu befahren." },
+            { term: "Stichstrecke", definition: "Stichstrecken sind eingleisige Strecken, auf denen keine Züge kreuzen." },
+            { term: "Strecken", definition: "Strecken sind Bahnanlagen für Fahrten zwischen Bahnhöfen und den Bahnhöfen selbst." },
+            { term: "Stumpfgleis", definition: "Ein Stumpfgleis ist ein Gleis, das mit einem Prellbock, einem Erdhaufen oder einem anderen festen Signal endet." },
+            { term: "Überschreiten der planmäßigen Haltezeit", definition: "Ein Zug hat die planmäßige Haltezeit überschritten, wenn er nach Ablauf der betrieblichen Abfahrzeit die Betriebsstelle noch nicht verlassen hat." },
+            { term: "Überholungen", definition: "Beim Überholen fährt ein Zug an einem in derselben Richtung wartenden Zug vorbei." },
+            { term: "Überleitstellen", definition: "Überleitstellen sind Bahnanlagen der freien Strecke, wo Züge von einem Gleis auf ein anderes Gleis derselben Strecke übergehen können." },
+            { term: "Untersuchungsfahrt", definition: "Untersuchungsfahrten sind Züge zur Untersuchung von Fahrzeugen oder zur Durchführung von Messungen an der Infrastruktur." },
+            { term: "Weichenwärter", definition: "Weichenwärter stellen die Weichen, Sperren und Signale und sichern die Zugfahrten und das Rangieren. Weichenwärter können auch Fahrdienstleiter sein, die nur für einen Teilbereich des Bahnhofs zuständig sind." },
+            { term: "Züge", definition: "Züge sind einzeln fahrende Triebfahrzeuge oder Triebfahrzeuge mit angehängten Fahrzeugen, die auf die freie Strecke übergehen oder auf der freien Strecke verkehren. Ausgenommen sind Kleinwagenfahrten." },
+            { term: "Zugfahrten", definition: "Zugfahrten sind Fahrten von Zügen auf der freien Strecke oder innerhalb eines Bahnhofs, die nicht als Rangierfahrten durchgeführt werden." },
+            { term: "Zugmeldestellen", definition: "Zugmeldestellen sind Betriebsstellen, die der Regelung der Zugfolge dienen. Eine Zugmeldestelle kann als Bahnhof, Abzweigstelle oder Überleitstelle eingerichtet sein. Blockstellen, die nicht in einen Bahnhof, eine Abzweigstelle oder eine Überleitstelle integriert sind, gelten als Zugmeldestelle." },
+            { term: "Zwangspunkte", definition: "Zwangspunkte sind Stellen, an denen die Geschwindigkeit eines Zuges durch die Zugbeeinflussung überwacht wird." }
         ];
 
+        // Daten und Status
+        let allTerms = definitions;
         let currentSessionTerms = [];
-        let currentTermIndex = 0;
+        let currentCardIndex = 0;
         let score = 0;
         let currentMode = 'learn';
-        let filteredDefinitions = [...definitions]; // Für die Suchfunktion
-        
-        // Cache-System für Lernfortschritt
-        class LearningCache {
-            constructor() {
-                this.storageKey = 'eurobahn-learning-progress';
-                this.data = this.loadFromStorage();
-                this.currentSessionId = null;
-            }
-            
-            loadFromStorage() {
-                try {
-                    const stored = localStorage.getItem(this.storageKey);
-                    return stored ? JSON.parse(stored) : {
-                        cardStatus: {}, // termIndex -> 'known'|'unknown'|'neutral'
-                        quizAnswers: {}, // mode_termIndex -> {userAnswer, isCorrect, timestamp}
-                        sessionStats: { total: 0, known: 0, unknown: 0 }
-                    };
-                } catch (e) {
-                    console.warn('Failed to load learning progress:', e);
-                    return { cardStatus: {}, quizAnswers: {}, sessionStats: { total: 0, known: 0, unknown: 0 } };
-                }
-            }
-            
-            saveToStorage() {
-                try {
-                    localStorage.setItem(this.storageKey, JSON.stringify(this.data));
-                } catch (e) {
-                    console.warn('Failed to save learning progress:', e);
-                }
-            }
-            
-            setCardStatus(termIndex, status) {
-                const oldStatus = this.data.cardStatus[termIndex];
-                this.data.cardStatus[termIndex] = status;
-                
-                // Update session stats
-                if (oldStatus !== status) {
-                    if (oldStatus === 'known') this.data.sessionStats.known--;
-                    if (oldStatus === 'unknown') this.data.sessionStats.unknown--;
-                    
-                    if (status === 'known') this.data.sessionStats.known++;
-                    if (status === 'unknown') this.data.sessionStats.unknown++;
-                    
-                    this.data.sessionStats.total = this.data.sessionStats.known + this.data.sessionStats.unknown;
-                }
-                
-                this.saveToStorage();
-            }
-            
-            getCardStatus(termIndex) {
-                return this.data.cardStatus[termIndex] || 'neutral';
-            }
-            
-            setQuizAnswer(mode, termIndex, userAnswer, isCorrect, isSkipped = false) {
-                const key = `${mode}_${termIndex}`;
-                // Ensure userAnswer is never undefined or the string "undefined"
-                let cleanAnswer = userAnswer;
-                if (cleanAnswer === undefined || cleanAnswer === null || cleanAnswer === 'undefined') {
-                    cleanAnswer = '';
-                }
-                
-                this.data.quizAnswers[key] = {
-                    userAnswer: cleanAnswer,
-                    isCorrect,
-                    timestamp: Date.now(),
-                    isSkipped: isSkipped || (cleanAnswer === '' && !isCorrect),
-                    sessionId: this.currentSessionId // Track which session this answer belongs to
-                };
-                this.saveToStorage();
-            }
-            
-            getQuizAnswer(mode, termIndex) {
-                const key = `${mode}_${termIndex}`;
-                const answer = this.data.quizAnswers[key] || null;
-                
-                // Only return answers from current session
-                if (answer && answer.sessionId !== this.currentSessionId) {
-                    return null;
-                }
-                
-                if (answer && (answer.userAnswer === undefined || answer.userAnswer === 'undefined')) {
-                    answer.userAnswer = '';
-                }
-                return answer;
-            }
-            
-            // Start a new quiz session - clears current session answers
-            startNewSession() {
-                this.currentSessionId = Date.now(); // Use timestamp as session ID
-            }
-            
-            // Clear all quiz answers (for new test sessions)
-            clearSessionAnswers() {
-                // Only clear answers from current session or all if no session tracking
-                Object.keys(this.data.quizAnswers).forEach(key => {
-                    const answer = this.data.quizAnswers[key];
-                    if (!answer.sessionId || answer.sessionId === this.currentSessionId) {
-                        delete this.data.quizAnswers[key];
-                    }
-                });
-                this.saveToStorage();
-            }
-            
-            hasAnswered(mode, termIndex) {
-                return this.getQuizAnswer(mode, termIndex) !== null;
-            }
-            
-            getStats() {
-                return { ...this.data.sessionStats };
-            }
-            
-            getFilteredDefinitions(filter) {
-                if (filter === 'unknown') {
-                    return definitions.filter((_, index) => this.getCardStatus(index) === 'unknown');
-                } else if (filter === 'known') {
-                    return definitions.filter((_, index) => this.getCardStatus(index) === 'known');
-                } else if (filter === 'neutral') {
-                    return definitions.filter((_, index) => this.getCardStatus(index) === 'neutral');
-                }
-                return definitions;
-            }
-            
-            resetProgress() {
-                this.data = { cardStatus: {}, quizAnswers: {}, sessionStats: { total: 0, known: 0, unknown: 0 } };
-                this.saveToStorage();
-            }
-        }
-        
-        const learningCache = new LearningCache();
+        let isSessionActive = false;
+        let knownTerms = new Set();
+        let unknownTerms = new Set();
+        const MAX_SELECTION_COUNT = 15;
 
+        // DOM-Elemente
         const settingsView = document.getElementById('settings-view');
         const mainView = document.getElementById('main-view');
-        const termSelectionContainer = document.getElementById('term-selection');
-        const startBtn = document.getElementById('start-btn');
+        const searchInput = document.getElementById('search-input');
+        const termSelectionDiv = document.getElementById('term-selection');
         const selectAllBtn = document.getElementById('select-all');
         const deselectAllBtn = document.getElementById('deselect-all');
-        const warning = document.getElementById('no-selection-warning');
-        const loader = document.getElementById('loader');
+        const startBtn = document.getElementById('start-btn');
+        const noSelectionWarning = document.getElementById('no-selection-warning');
+        const selectionCountEl = document.getElementById('selection-count');
+        const selectVisibleBtn = document.getElementById('select-visible');
+        const clearSearchBtn = document.getElementById('clear-search');
+        
+        // Progress Dashboard Elements
+        const totalTermsEl = document.getElementById('total-terms');
+        const knownCountEl = document.getElementById('known-count');
+        const unknownCountEl = document.getElementById('unknown-count');
+        const neutralCountEl = document.getElementById('neutral-count');
+        const progressBarEl = document.getElementById('progress-bar');
+        const progressTextEl = document.getElementById('progress-text');
+        const filterAllBtn = document.getElementById('filter-all');
+        const filterUnknownBtn = document.getElementById('filter-unknown');
+        const filterKnownBtn = document.getElementById('filter-known');
+        const filterNeutralBtn = document.getElementById('filter-neutral');
+        const resetProgressBtn = document.getElementById('reset-progress');
 
-        // Fade out loader after content is loaded AND a minimum of 3 seconds have passed
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const loader = document.getElementById('loader');
-                loader.classList.add('hidden');
-            }, 3000); // 3000ms = 3 seconds
+        // Initialisierungsfunktionen
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeProgress();
+            renderTermSelection(allTerms);
+            updateSelectionCount();
         });
         
-        document.addEventListener('DOMContentLoaded', () => {
-            populateTermSelection();
-            setupSearchFunctionality();
-            setupDashboardFilters();
+        // Ladebildschirm-Logik
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('loader');
+            const mainContent = document.querySelector('.main-content');
+            
+            setTimeout(() => {
+                loader.classList.add('fade-out');
+                mainContent.classList.add('visible');
+                
+                loader.addEventListener('transitionend', () => {
+                    loader.classList.add('hidden');
+                }, { once: true });
+            }, 1000); // Ladezeit: 1 Sekunde
+        });
+        
+        // Fortschritts-Funktionen
+        function initializeProgress() {
+            totalTermsEl.textContent = allTerms.length;
+            const savedKnown = JSON.parse(localStorage.getItem('knownTerms')) || [];
+            const savedUnknown = JSON.parse(localStorage.getItem('unknownTerms')) || [];
+            knownTerms = new Set(savedKnown);
+            unknownTerms = new Set(savedUnknown);
             updateProgressDashboard();
+        }
+
+        function updateProgressDashboard() {
+            const total = allTerms.length;
+            const known = knownTerms.size;
+            const unknown = unknownTerms.size;
+            const neutral = total - known - unknown;
+            const assessed = known + unknown;
+            const percentage = total > 0 ? Math.round((assessed / total) * 100) : 0;
+            
+            knownCountEl.textContent = known;
+            unknownCountEl.textContent = unknown;
+            neutralCountEl.textContent = neutral;
+            progressBarEl.style.width = `${percentage}%`;
+            progressTextEl.textContent = `${assessed} von ${total} Begriffen bewertet (${percentage}%)`;
+            
+            localStorage.setItem('knownTerms', JSON.stringify(Array.from(knownTerms)));
+            localStorage.setItem('unknownTerms', JSON.stringify(Array.from(unknownTerms)));
+        }
+
+        function markTerm(term, isKnown) {
+            if (isKnown) {
+                knownTerms.add(term);
+                unknownTerms.delete(term);
+            } else {
+                unknownTerms.add(term);
+                knownTerms.delete(term);
+            }
+            updateProgressDashboard();
+        }
+
+        // Filter-Funktionen
+        filterAllBtn.addEventListener('click', () => {
+            renderTermSelection(allTerms);
+        });
+        filterUnknownBtn.addEventListener('click', () => {
+            const filteredTerms = allTerms.filter(t => unknownTerms.has(t.term));
+            renderTermSelection(filteredTerms);
+        });
+        filterKnownBtn.addEventListener('click', () => {
+            const filteredTerms = allTerms.filter(t => knownTerms.has(t.term));
+            renderTermSelection(filteredTerms);
+        });
+        filterNeutralBtn.addEventListener('click', () => {
+            const filteredTerms = allTerms.filter(t => !knownTerms.has(t.term) && !unknownTerms.has(t.term));
+            renderTermSelection(filteredTerms);
+        });
+        resetProgressBtn.addEventListener('click', () => {
+            if (confirm("Möchten Sie den Lernfortschritt wirklich zurücksetzen?")) {
+                localStorage.clear();
+                knownTerms.clear();
+                unknownTerms.clear();
+                initializeProgress();
+                renderTermSelection(allTerms);
+            }
         });
 
-        function populateTermSelection(termsToShow = definitions, searchTerm = '') {
-            const sortedTerms = [...termsToShow].sort((a, b) => a.term.localeCompare(b.term));
-            
-            // Aktuelle Auswahl merken
-            const currentSelections = {};
-            document.querySelectorAll('.term-checkbox').forEach(cb => {
-                currentSelections[cb.dataset.index] = cb.checked;
-            });
-            
-            termSelectionContainer.innerHTML = '';
-            
-            sortedTerms.forEach((def) => {
-                const originalIndex = definitions.findIndex(d => d.term === def.term && d.definition === def.definition);
-                const status = learningCache.getCardStatus(originalIndex);
+        // Begriffe zur Auswahl rendern
+        function renderTermSelection(termsToRender) {
+            termSelectionDiv.innerHTML = '';
+            termsToRender.forEach(termObj => {
+                const isChecked = currentSessionTerms.some(t => t.term === termObj.term);
+                const isKnown = knownTerms.has(termObj.term);
+                const isUnknown = unknownTerms.has(termObj.term);
                 
-                const label = document.createElement('label');
-                label.className = 'flex items-center justify-between p-2 bg-white rounded-md hover:bg-gray-100 transition cursor-pointer term-selection-item';
-                
-                // Status-Indikator
-                let statusIndicator = '';
-                if (status === 'known') {
-                    statusIndicator = '<span class="w-3 h-3 bg-green-500 rounded-full flex-shrink-0" title="Gewusst"></span>';
-                } else if (status === 'unknown') {
-                    statusIndicator = '<span class="w-3 h-3 bg-red-500 rounded-full flex-shrink-0" title="Nicht gewusst"></span>';
-                } else {
-                    statusIndicator = '<span class="w-3 h-3 bg-gray-300 rounded-full flex-shrink-0" title="Noch nicht bewertet"></span>';
+                let checkboxClass = 'accent-gray-400';
+                if (isKnown) {
+                    checkboxClass = 'accent-green-500';
+                } else if (isUnknown) {
+                    checkboxClass = 'accent-red-500';
                 }
                 
-                // Hervorhebung des Suchbegriffs (nur in Begriffsnamen)
-                let displayTerm = def.term;
-                if (searchTerm && searchTerm.trim().length > 0) {
-                    const cleanSearchTerm = searchTerm.trim();
-                    const regex = new RegExp(`(${cleanSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                    displayTerm = def.term.replace(regex, '<span class="search-highlight">$1</span>');
-                }
-                
-                // Auswahl beibehalten - wenn vorher ausgewählt war, dann ausgewählt lassen
-                const isChecked = currentSelections.hasOwnProperty(originalIndex) 
-                    ? currentSelections[originalIndex] 
-                    : true; // Standardmäßig ausgewählt für neue Begriffe
-                
-                label.innerHTML = `
-                    <div class="flex items-center flex-grow min-w-0">
-                        <input type="checkbox" class="term-checkbox h-4 w-4 rounded border-gray-300 accent-[--eb-teal] focus:ring-[--eb-teal] flex-shrink-0" data-index="${originalIndex}" ${isChecked ? 'checked' : ''}>
-                        <span class="ml-2 text-sm text-gray-700 break-words">${displayTerm}</span>
-                    </div>
-                    ${statusIndicator}
+                const termItem = document.createElement('div');
+                termItem.className = `p-2 rounded-lg cursor-pointer transition-colors duration-200 border-2 border-transparent term-selection-item ${isChecked ? 'bg-[--eb-light-teal] border-[--eb-teal]' : 'hover:bg-gray-100'}`;
+                termItem.innerHTML = `
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" data-term="${termObj.term}" class="${checkboxClass}" ${isChecked ? 'checked' : ''}>
+                        <span class="text-sm font-medium text-gray-700 select-none">${termObj.term}</span>
+                    </label>
                 `;
-                termSelectionContainer.appendChild(label);
-            });
-            
-            // Auswahlzähler aktualisieren
-            updateSelectionCount();
-            // Dashboard aktualisieren
-            updateProgressDashboard();
-        }
-
-        function updateSelectionCount() {
-            const selectedCheckboxes = document.querySelectorAll('.term-checkbox:checked');
-            const totalCheckboxes = document.querySelectorAll('.term-checkbox');
-            const selectionCountEl = document.getElementById('selection-count');
-            
-            // Gesamtauswahl über alle Begriffe berechnen
-            const allSelectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.index));
-            const totalSelectedAcrossAll = allSelectedIndices.length;
-            
-            selectionCountEl.textContent = `${selectedCheckboxes.length} von ${totalCheckboxes.length} sichtbaren Begriffen ausgewählt (${totalSelectedAcrossAll} von ${definitions.length} gesamt ausgewählt)`;
-        }
-
-        function setupSearchFunctionality() {
-            const searchInput = document.getElementById('search-input');
-            const searchResultsCount = document.getElementById('search-results-count');
-            const selectVisibleBtn = document.getElementById('select-visible');
-            const clearSearchBtn = document.getElementById('clear-search');
-
-            // Such-Event-Listener
-            searchInput.addEventListener('input', (e) => {
-                const searchTerm = e.target.value.trim();
                 
-                if (searchTerm === '') {
-                    // Alle Begriffe anzeigen wenn Suchfeld leer ist
-                    filteredDefinitions = [...definitions];
-                    populateTermSelection(filteredDefinitions);
-                    searchResultsCount.classList.add('hidden');
-                    selectVisibleBtn.classList.add('hidden');
-                    clearSearchBtn.classList.add('hidden');
-                } else {
-                    // Filtern nach Suchbegriff (nur in Begriffsnamen)
-                    filteredDefinitions = definitions.filter(def => {
-                        return def.term.toLowerCase().includes(searchTerm.toLowerCase());
-                    });
-                    
-                    populateTermSelection(filteredDefinitions, searchTerm);
-                    
-                    // Ergebnis-Counter anzeigen
-                    searchResultsCount.textContent = `${filteredDefinitions.length} von ${definitions.length} Begriffen gefunden`;
-                    searchResultsCount.classList.remove('hidden');
-                    selectVisibleBtn.classList.remove('hidden');
-                    clearSearchBtn.classList.remove('hidden');
-                }
+                termItem.querySelector('input').addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        if (currentSessionTerms.length >= MAX_SELECTION_COUNT) {
+                            alert(`Sie können maximal ${MAX_SELECTION_COUNT} Begriffe gleichzeitig auswählen.`);
+                            e.target.checked = false;
+                            return;
+                        }
+                        currentSessionTerms.push(termObj);
+                        termItem.classList.add('bg-[--eb-light-teal]', 'border-[--eb-teal]');
+                    } else {
+                        currentSessionTerms = currentSessionTerms.filter(t => t.term !== termObj.term);
+                        termItem.classList.remove('bg-[--eb-light-teal]', 'border-[--eb-teal]');
+                    }
+                    updateSelectionCount();
+                });
+                
+                termSelectionDiv.appendChild(termItem);
             });
+            updateSelectionCount();
+        }
 
-            // "Sichtbare auswählen" Button
-            selectVisibleBtn.addEventListener('click', () => {
-                document.querySelectorAll('.term-checkbox').forEach(cb => cb.checked = true);
-                updateSelectionCount();
-            });
-
-            // "Suche löschen" Button
-            clearSearchBtn.addEventListener('click', () => {
-                searchInput.value = '';
-                filteredDefinitions = [...definitions];
-                populateTermSelection(filteredDefinitions);
-                searchResultsCount.classList.add('hidden');
+        // Suchfunktion
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            const filteredTerms = allTerms.filter(termObj => 
+                termObj.term.toLowerCase().includes(query) || 
+                termObj.definition.toLowerCase().includes(query)
+            );
+            
+            renderTermSelection(filteredTerms);
+            
+            const resultsCountEl = document.getElementById('search-results-count');
+            resultsCountEl.textContent = `(${filteredTerms.length} Ergebnisse)`;
+            resultsCountEl.classList.remove('hidden');
+            
+            if (query.length > 0) {
+                selectVisibleBtn.classList.remove('hidden');
+                clearSearchBtn.classList.remove('hidden');
+            } else {
                 selectVisibleBtn.classList.add('hidden');
                 clearSearchBtn.classList.add('hidden');
-                searchInput.focus();
-            });
+            }
+        });
+        
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            renderTermSelection(allTerms);
+            document.getElementById('search-results-count').classList.add('hidden');
+            selectVisibleBtn.classList.add('hidden');
+            clearSearchBtn.classList.add('hidden');
+        });
 
-            // Event-Listener für Checkbox-Änderungen
-            termSelectionContainer.addEventListener('change', (e) => {
-                if (e.target.classList.contains('term-checkbox')) {
-                    updateSelectionCount();
-                }
-            });
-        }
-        
-        function updateProgressDashboard() {
-            const stats = learningCache.getStats();
-            const totalTerms = definitions.length;
-            const evaluatedTerms = stats.known + stats.unknown;
-            const neutralTerms = totalTerms - evaluatedTerms;
-            const progressPercentage = totalTerms > 0 ? Math.round((evaluatedTerms / totalTerms) * 100) : 0;
-            
-            // Update counters
-            document.getElementById('total-terms').textContent = totalTerms;
-            document.getElementById('known-count').textContent = stats.known;
-            document.getElementById('unknown-count').textContent = stats.unknown;
-            document.getElementById('neutral-count').textContent = neutralTerms;
-            
-            // Update progress bar
-            document.getElementById('progress-bar').style.width = progressPercentage + '%';
-            document.getElementById('progress-text').textContent = `${progressPercentage}% bewertet`;
-        }
-        
-        function setupDashboardFilters() {
-            document.getElementById('filter-all').addEventListener('click', () => {
-                filteredDefinitions = [...definitions];
-                populateTermSelection(filteredDefinitions);
-            });
-            
-            document.getElementById('filter-unknown').addEventListener('click', () => {
-                filteredDefinitions = learningCache.getFilteredDefinitions('unknown');
-                populateTermSelection(filteredDefinitions);
-            });
-            
-            document.getElementById('filter-known').addEventListener('click', () => {
-                filteredDefinitions = learningCache.getFilteredDefinitions('known');
-                populateTermSelection(filteredDefinitions);
-            });
-            
-            document.getElementById('filter-neutral').addEventListener('click', () => {
-                filteredDefinitions = learningCache.getFilteredDefinitions('neutral');
-                populateTermSelection(filteredDefinitions);
-            });
-            
-            document.getElementById('reset-progress').addEventListener('click', () => {
-                if (confirm('Möchten Sie wirklich Ihren gesamten Lernfortschritt zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
-                    learningCache.resetProgress();
-                    location.reload();
-                }
-            });
-        }
-        
+        // Auswahl-Funktionen
         selectAllBtn.addEventListener('click', () => {
-            document.querySelectorAll('.term-checkbox').forEach(cb => cb.checked = true);
-            updateSelectionCount();
+            currentSessionTerms = allTerms.slice(0, MAX_SELECTION_COUNT);
+            renderTermSelection(allTerms);
         });
-
         deselectAllBtn.addEventListener('click', () => {
-            document.querySelectorAll('.term-checkbox').forEach(cb => cb.checked = false);
-            updateSelectionCount();
+            currentSessionTerms = [];
+            renderTermSelection(allTerms);
         });
+        selectVisibleBtn.addEventListener('click', () => {
+            const visibleTerms = Array.from(termSelectionDiv.querySelectorAll('input[type="checkbox"]')).map(el => el.dataset.term);
+            currentSessionTerms = allTerms.filter(t => visibleTerms.includes(t.term)).slice(0, MAX_SELECTION_COUNT);
+            renderTermSelection(allTerms);
+        });
+        function updateSelectionCount() {
+            selectionCountEl.textContent = `${currentSessionTerms.length} von ${MAX_SELECTION_COUNT} Begriffen ausgewählt`;
+        }
 
+        // Start-Button
         startBtn.addEventListener('click', () => {
-            const selectedCheckboxes = Array.from(document.querySelectorAll('.term-checkbox:checked'));
-            
-            if (selectedCheckboxes.length === 0) {
-                 warning.classList.remove('hidden');
-                 setTimeout(() => warning.classList.add('hidden'), 3000);
-                 return;
+            if (currentSessionTerms.length === 0) {
+                noSelectionWarning.classList.remove('hidden');
+            } else {
+                noSelectionWarning.classList.add('hidden');
+                isSessionActive = true;
+                settingsView.classList.add('hidden');
+                mainView.classList.remove('hidden');
+                initializeSession();
             }
-
-            const selectedIndices = selectedCheckboxes.map(cb => parseInt(cb.dataset.index));
-            currentSessionTerms = selectedIndices.map(i => definitions[i]);
-            
-            currentSessionTerms.sort(() => Math.random() - 0.5);
-
-            currentMode = document.querySelector('input[name="mode"]:checked').value;
-            currentTermIndex = 0;
-            score = 0;
-            
-            // Start new session for tests - clear previous session answers
-            if (currentMode.startsWith('test')) {
-                learningCache.startNewSession();
-                learningCache.clearSessionAnswers();
-            }
-
-            settingsView.classList.add('hidden');
-            document.getElementById('progress-dashboard').classList.add('hidden');
-            mainView.classList.remove('hidden');
-            
-            loadView();
         });
-        
-        function loadView() {
-            if (currentTermIndex >= currentSessionTerms.length) {
-                showEndScreen();
-                return;
-            }
-            mainView.innerHTML = '';
-            switch (currentMode) {
-                case 'learn':
-                    showLearnView();
-                    break;
-                case 'test-term':
-                    showTestTermView();
-                    break;
-                case 'test-def':
-                    showTestDefView();
-                    break;
-            }
-        }
 
-        function createNavigation(isTest = false, showCheck = false, showSkip = false) {
-             const progressText = `${isTest ? 'Frage' : 'Karte'} ${currentTermIndex + 1} von ${currentSessionTerms.length}`;
-             const scoreText = isTest ? ` | Punkte: ${score}` : '';
-             let buttonsHTML = `<button id="prev-btn" class="bg-gray-200 hover:bg-gray-300 text-[--eb-medium-blue] font-bold py-2 px-6 rounded-lg transition ${currentTermIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentTermIndex === 0 ? 'disabled' : ''}>Zurück</button>`;
-             if (showCheck) {
-                 buttonsHTML += `<button id="check-btn" class="bg-[--eb-medium-blue] hover:bg-[--eb-dark-blue] text-white font-bold py-2 px-6 rounded-lg transition">Prüfen</button>`;
-             }
-             if (showSkip) {
-                 buttonsHTML += `<button id="skip-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition">Überspringen</button>`;
-             }
-             buttonsHTML += `<button id="next-btn" class="bg-[--eb-teal] hover:bg-[#358f8f] text-white font-bold py-2 px-6 rounded-lg transition">${currentTermIndex === currentSessionTerms.length - 1 ? 'Beenden' : 'Weiter'}</button>`;
-            return `
-                <div class="w-full max-w-4xl mt-6 text-center">
-                   <p class="text-gray-500 mb-4">${progressText}${scoreText}</p>
-                   <div class="flex justify-center gap-4">
-                      ${buttonsHTML}
-                   </div>
-                </div>
-                <button id="back-to-settings" class="mt-8 text-[--eb-dark-blue] hover:text-[--eb-teal] hover:underline">&larr; Zurück zur Auswahl</button>
-            `;
-        }
-
-        function attachNavListeners(isTest=false) {
-            document.getElementById('back-to-settings').addEventListener('click', backToSettings);
-            const prevBtn = document.getElementById('prev-btn');
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    if (currentTermIndex > 0) {
-                        currentTermIndex--;
-                        loadView();
-                    }
-                });
-            }
-            const nextBtn = document.getElementById('next-btn');
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    if (currentTermIndex < currentSessionTerms.length - 1) {
-                        currentTermIndex++;
-                        loadView();
-                    } else {
-                        showEndScreen();
-                    }
-                });
-            }
-        }
-        
-        function backToSettings() {
-             mainView.classList.add('hidden');
-             settingsView.classList.remove('hidden');
-             document.getElementById('progress-dashboard').classList.remove('hidden');
-             mainView.innerHTML = '';
-             
-             // Cache-basierte Aktualisierung ohne Neuladen
-             updateProgressDashboard();
-             populateTermSelection(filteredDefinitions);
-        }
-
-        function showLearnView() {
-            const item = currentSessionTerms[currentTermIndex];
-            const termIndex = definitions.findIndex(def => def.term === item.term);
-            const currentStatus = learningCache.getCardStatus(termIndex);
-            
-            // Status indicator HTML
-            let statusIndicator = '';
-            if (currentStatus === 'known') {
-                statusIndicator = '<div class="absolute top-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white" title="Gewusst"></div>';
-            } else if (currentStatus === 'unknown') {
-                statusIndicator = '<div class="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-white" title="Nicht gewusst"></div>';
-            }
-            
-            mainView.innerHTML = `
-                <div class="w-full max-w-2xl h-96 card-container">
-                    <div class="relative w-full h-full card">
-                        ${statusIndicator}
-                        <div class="card-face card-face-front">
-                            <div class="card-header w-full bg-[--eb-dark-blue]">Begriff</div>
-                            <div class="card-content flex-grow flex items-center justify-center">
-                                 <h2 class="text-3xl font-bold text-center text-[--eb-medium-blue] p-4">${item.term}</h2>
-                            </div>
-                        </div>
-                        <div class="card-face card-face-back">
-                            <div class="card-header w-full bg-[--eb-teal]">Definition</div>
-                             <div class="card-content">
-                                <p class="text-gray-700 text-left whitespace-pre-wrap">${item.definition}</p>
-                             </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Schnelle Bewertungsbuttons -->
-                <div class="mt-6 flex justify-center gap-3">
-                    <button id="mark-unknown-next" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium">
-                        Nicht gewusst
-                    </button>
-                    <button id="mark-neutral-next" class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition font-medium">
-                        Überspringen
-                    </button>
-                    <button id="mark-known-next" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium">
-                        Gewusst
-                    </button>
-                </div>
-                
-                ${createNavigation()}
-            `;
-            const card = mainView.querySelector('.card');
-            card.addEventListener('click', () => card.classList.toggle('is-flipped'));
-            
-            // Add rating button listeners with automatic navigation
-            document.getElementById('mark-known-next').addEventListener('click', () => {
-                learningCache.setCardStatus(termIndex, 'known');
-                nextCard();
-            });
-            
-            document.getElementById('mark-unknown-next').addEventListener('click', () => {
-                learningCache.setCardStatus(termIndex, 'unknown');
-                nextCard();
-            });
-            
-            document.getElementById('mark-neutral-next').addEventListener('click', () => {
-                learningCache.setCardStatus(termIndex, 'neutral');
-                nextCard();
-            });
-            
-            attachNavListeners();
-        }
-        
-        function nextCard() {
-            if (currentTermIndex < currentSessionTerms.length - 1) {
-                currentTermIndex++;
-                loadView();
-            } else {
-                showEndScreen();
-            }
-        }
-        
-        function normalizeText(text) {
-             return text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").replace(/\s{2,}/g," ").trim();
-        }
-
-        function showTestTermView() {
-            const item = currentSessionTerms[currentTermIndex];
-            const termIndex = definitions.findIndex(def => def.term === item.term);
-            const previousAnswer = learningCache.getQuizAnswer('test-term', termIndex);
-            const isAlreadyAnswered = previousAnswer !== null && !previousAnswer.isSkipped;
-            
-            let textareaHTML, checkButtonHTML, feedbackHTML = '';
-            
-            if (isAlreadyAnswered) {
-                // Show view-only mode with previous answer (not skipped) - EXACTLY like after clicking "Prüfen"
-                let displayAnswer = previousAnswer.userAnswer;
-                if (displayAnswer === undefined || displayAnswer === null || displayAnswer === 'undefined') {
-                    displayAnswer = '';
-                }
-                // Use DISABLED textarea (like after checking), not gray div
-                textareaHTML = `<textarea id="answer-input" class="w-full h-40 p-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-[--eb-teal] focus:border-[--eb-teal]" placeholder="Ihre Definition..." disabled>${displayAnswer}</textarea>`;
-                checkButtonHTML = ''; // No buttons for already answered questions
-                
-                // NO feedbackHTML here - we'll set it via JavaScript like the direct check does
-                feedbackHTML = '';
-            } else {
-                // Show interactive mode (new or skipped)
-                const previousText = (previousAnswer && previousAnswer.isSkipped) ? '' : 
-                                   (previousAnswer && previousAnswer.userAnswer !== undefined && previousAnswer.userAnswer !== null ? previousAnswer.userAnswer : '');
-                textareaHTML = `<textarea id="answer-input" class="w-full h-40 p-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-[--eb-teal] focus:border-[--eb-teal]" placeholder="Ihre Definition...">${previousText}</textarea>`;
-                checkButtonHTML = `
-                    <div class="mt-4 flex gap-3">
-                        <button id="check-btn" class="bg-[--eb-dark-blue] text-white px-6 py-2 rounded-lg hover:bg-[--eb-medium-blue] transition">Prüfen</button>
-                        <button id="show-solution-btn" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition">Lösung anzeigen</button>
-                    </div>`;
-            }
-            
-            mainView.innerHTML = `
-                <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border border-gray-200 definition-quiz">
-                    <p class="text-gray-500 mb-2">Definieren Sie den folgenden Begriff: ${isAlreadyAnswered ? '(bereits beantwortet)' : ''}</p>
-                    <h2 class="text-3xl font-bold mb-6 text-[--eb-dark-blue]">${item.term}</h2>
-                    ${textareaHTML}
-                    ${checkButtonHTML || ''}
-                    <div id="feedback" class="mt-4 p-4 rounded-lg hidden whitespace-pre-wrap"></div>
-                    ${feedbackHTML}
-                </div>
-                ${createNavigation(true, false, !isAlreadyAnswered)}
-            `;
-            attachNavListeners(true);
-            
-            // Set feedback for already answered questions - EXACTLY like direct checking does
-            if (isAlreadyAnswered) {
-                const feedbackEl = document.getElementById('feedback');
-                feedbackEl.classList.remove('hidden');
-                
-                if (previousAnswer.isCorrect) {
-                    feedbackEl.innerHTML = `<p class="font-bold">✓ Sehr gut, das ist richtig!</p>`;
-                    feedbackEl.classList.remove('hidden');
-                    feedbackEl.classList.add('correct-answer');
-                } else {
-                    feedbackEl.innerHTML = `<p class="font-bold">✗ Diese Antwort war nicht korrekt</p>
-                    <p class="mt-2"><strong>Korrekte Definition:</strong></p>
-                    <p class="whitespace-pre-wrap">${item.definition}</p>`;
-                    feedbackEl.classList.remove('hidden');
-                    feedbackEl.classList.add('wrong-answer');
-                }
-            }
-            
-            // Only add check functionality if not already answered
-            if (!isAlreadyAnswered) {
-                const checkBtn = document.getElementById('check-btn');
-                const showSolutionBtn = document.getElementById('show-solution-btn');
-                
-                // Function to toggle button visibility based on input
-                function updateButtons() {
-                    const userInput = document.getElementById('answer-input').value.trim();
-                    if (userInput.length > 0) {
-                        checkBtn.style.display = 'inline-block';
-                        showSolutionBtn.style.display = 'none';
-                    } else {
-                        checkBtn.style.display = 'none';
-                        showSolutionBtn.style.display = 'inline-block';
-                    }
-                }
-                
-                // Update buttons on input change
-                document.getElementById('answer-input').addEventListener('input', updateButtons);
-                
-                // Initial button state
-                updateButtons();
-                
-                if (checkBtn) {
-                    checkBtn.addEventListener('click', () => {
-                        const userAnswer = document.getElementById('answer-input').value.trim();
-                        if (!userAnswer) return;
-                        
-                        const feedbackEl = document.getElementById('feedback');
-                        const cleanUserAnswer = normalizeText(userAnswer);
-                        const cleanCorrectAnswer = normalizeText(item.definition);
-
-                        const diff = Diff.diffWords(cleanCorrectAnswer, cleanUserAnswer, { ignoreCase: true });
-                        let changes = 0;
-                        diff.forEach(part => {
-                            if(part.added || part.removed) changes += part.count;
-                        });
-                        
-                        const totalWords = cleanCorrectAnswer.split(' ').length;
-                        const errorPercentage = totalWords > 0 ? (changes / totalWords) * 100 : (changes > 0 ? 100 : 0);
-                        const isCorrect = errorPercentage < 15;
-                        
-                        // Save answer to cache and set card status
-                        learningCache.setQuizAnswer('test-term', termIndex, userAnswer, isCorrect, false);
-                        learningCache.setCardStatus(termIndex, isCorrect ? 'known' : 'unknown');
-                        
-                        feedbackEl.classList.remove('hidden');
-                        
-                        if (isCorrect) {
-                            feedbackEl.innerHTML = `<p class="font-bold">✓ Sehr gut, das ist richtig!</p>`;
-                            feedbackEl.classList.add('correct-answer');
-                            score++;
-                        } else {
-                            feedbackEl.innerHTML = `<p class="font-bold">✗ Diese Antwort war nicht korrekt</p>
-                            <p class="mt-2"><strong>Korrekte Definition:</strong></p>
-                            <p class="whitespace-pre-wrap">${item.definition}</p>`;
-                            feedbackEl.classList.add('wrong-answer');
-                        }
-
-                        checkBtn.style.display = 'none';
-                        showSolutionBtn.style.display = 'none';
-                        document.getElementById('answer-input').disabled = true;
-                        
-                        // Hide skip button after answering
-                        const skipBtn = document.getElementById('skip-btn');
-                        if (skipBtn) skipBtn.classList.add('hidden');
-                    });
-                }
-                
-                // Add show solution functionality
-                if (showSolutionBtn) {
-                    showSolutionBtn.addEventListener('click', () => {
-                        const feedbackEl = document.getElementById('feedback');
-                        
-                        // Save as skipped
-                        learningCache.setQuizAnswer('test-term', termIndex, '', false, true);
-                        learningCache.setCardStatus(termIndex, 'neutral');
-                        
-                        feedbackEl.classList.remove('hidden');
-                        feedbackEl.innerHTML = `<p class="font-bold">💡 Lösung angezeigt</p>
-                        <p class="mt-2"><strong>Korrekte Definition:</strong></p>
-                        <p class="whitespace-pre-wrap">${item.definition}</p>`;
-                        feedbackEl.classList.add('bg-blue-50', 'border', 'border-blue-200', 'text-blue-800');
-                        
-                        checkBtn.style.display = 'none';
-                        showSolutionBtn.style.display = 'none';
-                        document.getElementById('answer-input').disabled = true;
-                        
-                        // Hide skip button after showing solution
-                        const skipBtn = document.getElementById('skip-btn');
-                        if (skipBtn) skipBtn.classList.add('hidden');
-                    });
-                }
-                
-                // Add skip functionality
-                const skipBtn = document.getElementById('skip-btn');
-                if (skipBtn) {
-                    skipBtn.addEventListener('click', () => {
-                        // Save as skipped (neutral status)
-                        learningCache.setQuizAnswer('test-term', termIndex, '', false, true);
-                        learningCache.setCardStatus(termIndex, 'neutral');
-                        
-                        if (currentTermIndex < currentSessionTerms.length - 1) {
-                            currentTermIndex++;
-                            loadView();
-                        } else {
-                            showEndScreen();
-                        }
-                    });
-                }
-            }
-        }
-
-        function showTestDefView() {
-            const item = currentSessionTerms[currentTermIndex];
-            const termIndex = definitions.findIndex(def => def.term === item.term);
-            const previousAnswer = learningCache.getQuizAnswer('test-def', termIndex);
-            const isAlreadyAnswered = previousAnswer !== null && !previousAnswer.isSkipped;
-            
-            let optionsHTML = '';
-            let feedbackHTML = '';
-            
-            if (isAlreadyAnswered) {
-                // Show view-only mode with previous answer (not skipped)
-                const wrongAnswers = definitions.filter(d => d.term !== item.term).sort(() => 0.5 - Math.random()).slice(0, 3).map(d => d.term);
-                const options = [item.term, ...wrongAnswers].sort(() => 0.5 - Math.random());
-                
-                options.forEach(option => {
-                    let buttonClass = 'answer-option w-full text-left p-4 rounded-lg border-2 transition cursor-default';
-                    if (option === item.term) {
-                        buttonClass += ' correct-answer'; // Correct answer
-                    } else if (option === previousAnswer.userAnswer && !previousAnswer.isCorrect) {
-                        buttonClass += ' wrong-answer'; // Wrong answer that was selected
-                    } else {
-                        buttonClass += ' bg-gray-100 border-gray-300'; // Not selected
-                    }
-                    optionsHTML += `<button class="${buttonClass}" disabled>${option}</button>`;
-                });
-                
-                if (previousAnswer.isCorrect) {
-                    feedbackHTML = `<div class="p-4 rounded-lg correct-answer">✓ Diese Antwort war richtig!</div>`;
-                } else {
-                    feedbackHTML = `<div class="p-4 rounded-lg wrong-answer">
-                        <p class="font-bold">✗ Diese Antwort war falsch.</p>
-                        <p class="mt-2"><strong>Korrekte Antwort:</strong> ${item.term}</p>
-                    </div>`;
-                }
-            } else {
-                // Show interactive mode (new or skipped)
-                const wrongAnswers = definitions.filter(d => d.term !== item.term).sort(() => 0.5 - Math.random()).slice(0, 3).map(d => d.term);
-                const options = [item.term, ...wrongAnswers].sort(() => 0.5 - Math.random());
-                
-                options.forEach(option => {
-                    optionsHTML += `<button class="answer-option w-full text-left p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition border-2 border-transparent">${option}</button>`;
-                });
-                
-                // Add solution button below options
-                optionsHTML += `
-                    <div class="mt-4 text-left">
-                        <button id="show-solution-btn" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition">Lösung anzeigen</button>
-                    </div>`;
-            }
-
-            mainView.innerHTML = `
-                 <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg border border-gray-200 definition-quiz">
-                    <p class="text-gray-500 mb-2">Welcher Begriff wird hier definiert? ${isAlreadyAnswered ? '(bereits beantwortet)' : ''}</p>
-                    <p class="text-lg mb-6 text-[--eb-dark-blue] whitespace-pre-wrap">${item.definition}</p>
-                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        ${optionsHTML}
-                    </div>
-                    <div id="feedback" class="mt-4 p-4 rounded-lg ${isAlreadyAnswered ? '' : 'hidden'}"></div>
-                    ${feedbackHTML}
-                </div>
-                ${createNavigation(true, false, !isAlreadyAnswered)}
-            `;
-
-            attachNavListeners(true);
-            
-            // Only add click functionality if not already answered
-            if (!isAlreadyAnswered) {
-                const optionsContainer = document.getElementById('options-container');
-
-                optionsContainer.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('answer-option')) {
-                        const userAnswer = e.target.textContent;
-                        const feedbackEl = document.getElementById('feedback');
-                        const isCorrect = userAnswer === item.term;
-                        
-                        // Save answer to cache and set card status
-                        learningCache.setQuizAnswer('test-def', termIndex, userAnswer, isCorrect, false);
-                        learningCache.setCardStatus(termIndex, isCorrect ? 'known' : 'unknown');
-                        
-                        feedbackEl.classList.remove('hidden');
-
-                        optionsContainer.querySelectorAll('.answer-option').forEach(btn => {
-                            btn.disabled = true;
-                            if (btn.textContent === item.term) btn.classList.add('correct-answer');
-                        });
-
-                        if (isCorrect) {
-                            feedbackEl.textContent = '✓ Richtig!';
-                            feedbackEl.className = 'p-4 rounded-lg correct-answer';
-                            score++;
-                        } else {
-                            e.target.classList.add('wrong-answer');
-                            feedbackEl.innerHTML = `<p class="font-bold">✗ Falsch.</p>
-                            <p class="mt-2"><strong>Korrekte Antwort:</strong> ${item.term}</p>`;
-                            feedbackEl.className = 'p-4 rounded-lg wrong-answer';
-                        }
-                        
-                        // Hide skip button and solution button after answering
-                        const skipBtn = document.getElementById('skip-btn');
-                        if (skipBtn) skipBtn.classList.add('hidden');
-                        
-                        const showSolutionBtn = document.getElementById('show-solution-btn');
-                        if (showSolutionBtn) showSolutionBtn.style.display = 'none';
-                    }
-                });
-                
-                // Add show solution functionality
-                const showSolutionBtn = document.getElementById('show-solution-btn');
-                if (showSolutionBtn) {
-                    showSolutionBtn.addEventListener('click', function() {
-                        // Highlight correct answer in blue
-                        optionsContainer.querySelectorAll('.answer-option').forEach(btn => {
-                            if (btn.textContent === item.term) {
-                                btn.classList.remove('bg-gray-100', 'border-transparent');
-                                btn.classList.add('bg-blue-200', 'border-blue-500');
-                            }
-                        });
-                        
-                        // Hide solution button
-                        showSolutionBtn.style.display = 'none';
-                        
-                        // Show feedback
-                        const feedbackEl = document.getElementById('feedback');
-                        feedbackEl.innerHTML = `<p class="text-blue-800 font-bold">Lösung: ${item.term}</p>`;
-                        feedbackEl.className = 'p-4 rounded-lg bg-blue-100 border-2 border-blue-300';
-                        feedbackEl.classList.remove('hidden');
-                        
-                        // Mark as skipped
-                        learningCache.setQuizAnswer('test-def', termIndex, '', false, true);
-                        learningCache.setCardStatus(termIndex, 'neutral');
-                        
-                        // Hide skip button after showing solution
-                        const skipBtn = document.getElementById('skip-btn');
-                        if (skipBtn) skipBtn.classList.add('hidden');
-                    });
-                }
-                
-                // Add skip functionality
-                const skipBtn = document.getElementById('skip-btn');
-                if (skipBtn) {
-                    skipBtn.addEventListener('click', () => {
-                        // Save as skipped (neutral status)
-                        learningCache.setQuizAnswer('test-def', termIndex, '', false, true);
-                        learningCache.setCardStatus(termIndex, 'neutral');
-                        
-                        if (currentTermIndex < currentSessionTerms.length - 1) {
-                            currentTermIndex++;
-                            loadView();
-                        } else {
-                            showEndScreen();
-                        }
-                    });
-                }
+        // Sitzungs-Logik
+        function initializeSession() {
+            currentCardIndex = 0;
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            if (mode === 'learn') {
+                currentSessionTerms.sort(() => Math.random() - 0.5); // Shuffle for learning
+                renderLearnCard();
+            } else if (mode === 'test-term') {
+                currentSessionTerms.sort(() => Math.random() - 0.5); // Shuffle for testing
+                renderTestTermCard();
+            } else if (mode === 'test-def') {
+                currentSessionTerms.sort(() => Math.random() - 0.5); // Shuffle for testing
+                renderTestDefCard();
             }
         }
 
         function showEndScreen() {
+            isSessionActive = false;
             let message = '';
-            if (currentMode.startsWith('test')) {
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            if (mode.startsWith('test')) {
                 const percentage = currentSessionTerms.length > 0 ? Math.round((score / currentSessionTerms.length) * 100) : 0;
                 message = `
-                    <h2 class="text-3xl font-bold mb-4">Test beendet!</h2>
+                    <h2 class="text-3xl font-bold mb-4 text-[--eb-dark-blue]">Test beendet!</h2>
                     <p class="text-xl">Du hast ${score} von ${currentSessionTerms.length} Begriffen richtig beantwortet.</p>
                     <p class="text-5xl font-bold mt-4 text-[--eb-teal]">${percentage}%</p>
                 `;
             } else {
-                message = `<h2 class="text-3xl font-bold mb-4">Lernsitzung beendet!</h2><p class="text-xl">Du hast alle ausgewählten Karteikarten durchgesehen.</p>`;
+                message = `<h2 class="text-3xl font-bold mb-4 text-[--eb-dark-blue]">Lernsitzung beendet!</h2><p class="text-xl">Du hast alle ausgewählten Karteikarten durchgesehen.</p>`;
             }
 
             mainView.innerHTML = `
@@ -1328,9 +693,239 @@
                     </div>
                 </div>
             `;
-            document.getElementById('restart-btn').addEventListener('click', backToSettings);
+            document.getElementById('restart-btn').addEventListener('click', () => {
+                isSessionActive = false;
+                settingsView.classList.remove('hidden');
+                mainView.classList.add('hidden');
+                currentSessionTerms = [];
+                updateSelectionCount();
+                renderTermSelection(allTerms);
+            });
+        }
+        
+        function renderCardNavigation() {
+            return `
+                <div class="mt-6 flex justify-between gap-4 w-full">
+                    <button id="back-to-settings-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition">Zurück zu den Einstellungen</button>
+                    <button id="next-card-btn" class="bg-[--eb-dark-blue] hover:bg-[#202c5c] text-white font-bold py-3 px-6 rounded-lg transition">Nächster Begriff</button>
+                </div>
+            `;
+        }
+
+        // Lernmodus (Karteikarten)
+        function renderLearnCard() {
+            if (currentCardIndex >= currentSessionTerms.length) {
+                showEndScreen();
+                return;
+            }
+
+            const term = currentSessionTerms[currentCardIndex];
+            mainView.innerHTML = `
+                <div class="card-container w-full max-w-2xl h-[400px]">
+                    <div id="flashcard" class="card h-full">
+                        <div class="card-face card-face-front flex-col p-8">
+                            <h2 class="text-3xl font-bold text-center mb-4 text-[--eb-dark-blue]">${term.term}</h2>
+                            <button id="flip-btn" class="bg-[--eb-teal] hover:bg-[#358f8f] text-white font-bold py-3 px-6 rounded-lg transition">Definition anzeigen</button>
+                        </div>
+                        <div class="card-face card-face-back flex-col p-8">
+                            <h3 class="text-xl font-bold mb-4">Definition</h3>
+                            <p class="text-gray-700 mb-4">${term.definition}</p>
+                            <div class="flex gap-4">
+                                <button id="known-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition">Gewusst</button>
+                                <button id="unknown-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">Nicht gewusst</button>
+                            </div>
+                            ${renderCardNavigation()}
+                        </div>
+                    </div>
+                </div>
+            `;
+            const card = document.getElementById('flashcard');
+            const flipBtn = document.getElementById('flip-btn');
+            flipBtn.addEventListener('click', () => {
+                card.classList.add('is-flipped');
+            });
+
+            document.getElementById('known-btn').addEventListener('click', () => {
+                markTerm(term.term, true);
+                currentCardIndex++;
+                renderLearnCard();
+            });
+            document.getElementById('unknown-btn').addEventListener('click', () => {
+                markTerm(term.term, false);
+                currentCardIndex++;
+                renderLearnCard();
+            });
+            
+            setupNavigationListeners();
+        }
+
+        // Testmodus: Begriff -> Definition
+        function renderTestTermCard() {
+            if (currentCardIndex >= currentSessionTerms.length) {
+                showEndScreen();
+                return;
+            }
+            const term = currentSessionTerms[currentCardIndex];
+            mainView.innerHTML = `
+                <div class="definition-quiz bg-white p-8 rounded-xl shadow-lg border border-gray-200 w-full max-w-2xl">
+                    <h2 class="text-2xl font-bold mb-4 text-[--eb-dark-blue] text-center">${term.term}</h2>
+                    <p class="text-center text-gray-500 mb-6">${term.hint || "Schreibe die Definition auf..."}</p>
+                    <textarea id="user-answer" class="w-full p-4 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-[--eb-teal]" rows="6" placeholder="Deine Antwort..."></textarea>
+                    <div id="feedback" class="mt-4 p-4 rounded-lg hidden"></div>
+                    <div class="mt-6 flex justify-between gap-4">
+                        <button id="check-btn" class="flex-1 bg-[--eb-teal] hover:bg-[#358f8f] text-white font-bold py-3 px-6 rounded-lg transition">Prüfen</button>
+                        <button id="next-btn" class="flex-1 bg-[--eb-dark-blue] hover:bg-[#202c5c] text-white font-bold py-3 px-6 rounded-lg transition hidden">Nächster Begriff</button>
+                    </div>
+                    <button id="show-answer-btn" class="mt-4 w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition">Antwort anzeigen</button>
+                </div>
+            `;
+            
+            document.getElementById('check-btn').addEventListener('click', () => checkAnswer(term, 'term'));
+            document.getElementById('next-btn').addEventListener('click', () => {
+                currentCardIndex++;
+                renderTestTermCard();
+            });
+            document.getElementById('show-answer-btn').addEventListener('click', () => showCorrectAnswer(term, 'term'));
+        }
+
+        // Testmodus: Definition -> Begriff
+        function renderTestDefCard() {
+            if (currentCardIndex >= currentSessionTerms.length) {
+                showEndScreen();
+                return;
+            }
+            const term = currentSessionTerms[currentCardIndex];
+            
+            const allTermsArray = allTerms.map(t => t.term);
+            const correctTerm = term.term;
+            
+            const wrongOptions = new Set();
+            while (wrongOptions.size < 3) {
+                const randomTerm = allTermsArray[Math.floor(Math.random() * allTermsArray.length)];
+                if (randomTerm !== correctTerm) {
+                    wrongOptions.add(randomTerm);
+                }
+            }
+            
+            const options = [...wrongOptions, correctTerm].sort(() => Math.random() - 0.5);
+
+            mainView.innerHTML = `
+                <div class="definition-quiz bg-white p-8 rounded-xl shadow-lg border border-gray-200 w-full max-w-2xl">
+                    <h2 class="text-2xl font-bold mb-4 text-[--eb-dark-blue] text-center">Welcher Begriff passt zu dieser Definition?</h2>
+                    <p class="text-gray-700 mb-6">${term.definition}</p>
+                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${options.map(opt => `<button class="answer-option bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-200 text-left">${opt}</button>`).join('')}
+                    </div>
+                    <div id="feedback" class="mt-4 p-4 rounded-lg hidden"></div>
+                    <button id="next-btn" class="mt-6 w-full bg-[--eb-dark-blue] hover:bg-[#202c5c] text-white font-bold py-3 px-6 rounded-lg transition hidden">Nächster Begriff</button>
+                </div>
+            `;
+            
+            document.querySelectorAll('.answer-option').forEach(button => {
+                button.addEventListener('click', (e) => checkMultipleChoice(e.target.textContent, correctTerm));
+            });
+            document.getElementById('next-btn').addEventListener('click', () => {
+                currentCardIndex++;
+                renderTestDefCard();
+            });
+        }
+        
+        function checkAnswer(term, type) {
+            const userAnswer = document.getElementById('user-answer').value.trim();
+            const correctAnswer = type === 'term' ? term.definition : term.term;
+            const feedbackEl = document.getElementById('feedback');
+            const checkBtn = document.getElementById('check-btn');
+            const nextBtn = document.getElementById('next-btn');
+
+            const diff = JsDiff.diffWords(correctAnswer, userAnswer);
+            
+            feedbackEl.innerHTML = '';
+            diff.forEach((part) => {
+                const span = document.createElement('span');
+                span.textContent = part.value;
+                if (part.added) {
+                    span.style.backgroundColor = 'lightgreen';
+                }
+                if (part.removed) {
+                    span.style.backgroundColor = 'salmon';
+                }
+                feedbackEl.appendChild(span);
+            });
+            feedbackEl.classList.remove('hidden');
+
+            const isCorrect = (userAnswer.toLowerCase().replace(/\s/g, '') === correctAnswer.toLowerCase().replace(/\s/g, ''));
+            if (isCorrect) {
+                score++;
+                markTerm(term.term, true);
+                feedbackEl.innerHTML = '<span class="text-green-700 font-bold">Richtig!</span>';
+            } else {
+                markTerm(term.term, false);
+                feedbackEl.innerHTML += '<div class="mt-2 text-red-700 font-bold">Leider falsch. Die richtige Antwort ist:</div>'
+            }
+
+            checkBtn.classList.add('hidden');
+            nextBtn.classList.remove('hidden');
+        }
+
+        function showCorrectAnswer(term, type) {
+            const feedbackEl = document.getElementById('feedback');
+            const checkBtn = document.getElementById('check-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const showAnswerBtn = document.getElementById('show-answer-btn');
+            
+            const correctAnswer = type === 'term' ? term.definition : term.term;
+            
+            feedbackEl.innerHTML = `<div class="font-bold">Richtige Antwort:</div><p>${correctAnswer}</p>`;
+            feedbackEl.classList.remove('hidden');
+            
+            checkBtn.classList.add('hidden');
+            showAnswerBtn.classList.add('hidden');
+            nextBtn.classList.remove('hidden');
+            
+            markTerm(term.term, false); // Markiert als "Nicht gewusst"
+        }
+
+        function checkMultipleChoice(selectedAnswer, correctAnswer) {
+            const feedbackEl = document.getElementById('feedback');
+            const nextBtn = document.getElementById('next-btn');
+            const buttons = document.querySelectorAll('.answer-option');
+            
+            buttons.forEach(button => {
+                button.disabled = true;
+                if (button.textContent === correctAnswer) {
+                    button.classList.add('bg-green-500', 'text-white');
+                } else if (button.textContent === selectedAnswer) {
+                    button.classList.add('bg-red-500', 'text-white');
+                }
+            });
+
+            if (selectedAnswer === correctAnswer) {
+                score++;
+                markTerm(correctAnswer, true);
+                feedbackEl.innerHTML = '<p class="text-green-700 font-bold">Richtig!</p>';
+            } else {
+                markTerm(correctAnswer, false);
+                feedbackEl.innerHTML = `<p class="text-red-700 font-bold">Leider falsch. Die richtige Antwort war "${correctAnswer}".</p>`;
+            }
+            
+            feedbackEl.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+        }
+
+        function setupNavigationListeners() {
+            document.getElementById('back-to-settings-btn').addEventListener('click', () => {
+                isSessionActive = false;
+                settingsView.classList.remove('hidden');
+                mainView.classList.add('hidden');
+                currentSessionTerms = [];
+                updateSelectionCount();
+                renderTermSelection(allTerms);
+            });
+            document.getElementById('next-card-btn').addEventListener('click', () => {
+                currentCardIndex++;
+                renderLearnCard();
+            });
         }
     </script>
 </body>
-
 </html>
