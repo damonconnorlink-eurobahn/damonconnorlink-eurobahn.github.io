@@ -454,7 +454,9 @@
             { term: "Zugmeldestellen", definition: "Zugmeldestellen sind Betriebsstellen, die der Zugfolge auf der freien Strecke dienen. Bahnhöfe, Abzweigstellen, Überleitstellen und Haltestellen sind stets Zugmeldestellen. Auf Strecken mit Stichstreckenblock kann eine Blockstelle auch als Zugmeldestelle gelten." },
             { term: "Zugpersonal", definition: "Zugpersonal sind die Mitarbeiter, die auf einem Triebfahrzeug oder in einem Zug an der Durchführung von Zugfahrten beteiligt sind." }
         ];
-
+        
+        let learningProgress = {};
+        
         const totalTermsCount = definitions.length;
         let selectedTerms = [];
         let currentSessionTerms = [];
@@ -759,7 +761,6 @@
         // --- Ende bestehende Funktionen angepasst ---
         
         // Unveränderter Code, nur der Übersicht halber
-        // ... (Der restliche JavaScript-Code ab hier bleibt unverändert)
         function loadProgress() {
             const progress = localStorage.getItem('learningProgress');
             if (progress) {
