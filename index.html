@@ -212,11 +212,16 @@
     </style>
 </head>
 <body class="antialiased">
-    <!-- Ladebildschirm -->
     <div id="loader" class="loader">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/2/23/BSicon_BAHN.svg" alt="Eisenbahn" class="h-20">
+        <header class="text-center mb-8 border-b-2 border-gray-200 pb-4 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/23/BSicon_BAHN.svg" alt="Eisenbahn" class="h-12 md:h-16">
+            <div class="text-center sm:text-left">
+                <h1 class="text-3xl md:text-4xl font-bold text-[--eb-dark-blue] tracking-wide">Lernplattform</h1>
+                <p class="text-lg text-gray-500">Begriffsdefinitionen Ril 408.2101A01</p>
+            </div>
+        </header>
     </div>
-
+    
     <div class="container mx-auto p-4 md:p-8 min-h-screen flex flex-col">
         <header class="text-center mb-8 border-b-2 border-gray-200 pb-4 flex flex-col sm:flex-row justify-center items-center gap-4">
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/23/BSicon_BAHN.svg" alt="Eisenbahn" class="h-12 md:h-16">
@@ -582,11 +587,13 @@
         const warning = document.getElementById('no-selection-warning');
         const loader = document.getElementById('loader');
 
-        window.onload = () => {
-             setTimeout(() => { // Sorgt für eine minimale Ladezeit-Anzeige
+        // Fade out loader after content is loaded AND a minimum of 3 seconds have passed
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
                 loader.classList.add('hidden');
-             }, 500);
-        };
+            }, 3000); // 3000ms = 3 seconds
+        });
         
         document.addEventListener('DOMContentLoaded', () => {
             populateTermSelection();
